@@ -6,9 +6,9 @@ Plataforma web de aluguer de ferramentas de uso civil entre utilizadores.
 Permitir que utilizadores disponibilizem e aluguem ferramentas de forma simples.
 
 ## Equipa
-- David Bação
-- Lucas Nicolau
-- Francisco Lourinho
+- David Bação - 20230331	​
+- Lucas Nicolau - 20241526​
+- Francisco Lourinho - 202301001
 
 ## Tecnologias previstas
 - HTML
