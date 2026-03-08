@@ -1,1 +1,34 @@
-# tools-4-the-trade
+# TOOLS 4 THE TRADE
+
+Plataforma web de aluguer de ferramentas de uso civil entre utilizadores.
+
+## Objetivo
+Permitir que utilizadores disponibilizem e aluguem ferramentas de forma simples.
+
+## Equipa
+- David Bação
+- Lucas Nicolau
+- Francisco Lourinho
+
+## Tecnologias previstas
+- HTML
+- CSS
+- Node.js
+- MySQL
+- OpenStreetMap
+- Figma
+
+## Funcionalidades principais
+- Registo/Login
+- User/Rent view
+  - Listagem de Ferramentas
+    - Calendario de Alugeres
+- Mapa de Ferramentas
+- Dashboard Estatistica
+- Favoritos
+
+## Funcionalidades opcionais
+- Chat entre users
+- Comprar ferramentas
+- Rating
+- Serviços de mao de obra / ensino
