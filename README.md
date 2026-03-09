@@ -13,7 +13,7 @@ Permitir que utilizadores disponibilizem e aluguem ferramentas de forma simples.
 ## Tecnologias previstas
 - HTML
 - CSS
-- Node.js
+- PHP
 - MySQL
 - OpenStreetMap
 - Figma
