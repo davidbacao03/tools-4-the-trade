@@ -11,12 +11,12 @@ Permitir que utilizadores disponibilizem e aluguem ferramentas de forma simples.
 - Francisco Lourinho - 202301001
 
 ## Tecnologias previstas
-- HTML
-- CSS
-- PHP
-- MySQL
-- OpenStreetMap
-- Figma
+•	HTML
+•	CSS
+•	JAVASCRIPT
+•	PHP
+•	MySQL
+•	Open Street Map
 
 ## Funcionalidades principais
 - Registo/Login
