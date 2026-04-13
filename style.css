@@ -1,0 +1,245 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+    color: #222222;
+}
+
+.layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 220px;
+    background-color: #ffffff;
+    border-right: 1px solid #dddddd;
+    padding: 20px;
+}
+
+.logo {
+    margin-top: 0;
+    margin-bottom: 30px;
+    font-size: 22px;
+}
+
+.menu a {
+    display: block;
+    text-decoration: none;
+    color: #222222;
+    padding: 12px 10px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+
+.menu a:hover {
+    background-color: #f0f0f0;
+}
+
+/* Conteúdo */
+.content {
+    flex: 1;
+}
+
+/* Topbar */
+.topbar {
+    background-color: #ffffff;
+    border-bottom: 1px solid #dddddd;
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.search-box input {
+    width: 320px;
+    max-width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    background-color: #fafafa;
+}
+
+.profile-circle {
+    width: 40px;
+    height: 40px;
+    background-color: #444444;
+    border-radius: 50%;
+}
+
+/* Área principal */
+.main-area {
+    padding: 25px;
+}
+
+.hero,
+.map-section,
+.tools-section,
+.form-section,
+.dashboard-section {
+    background-color: #ffffff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid #e2e2e2;
+    border-radius: 6px;
+}
+
+.hero h1,
+.tools-section h1,
+.form-section h1,
+.dashboard-section h1,
+.map-section h2,
+.tools-section h2 {
+    margin-top: 0;
+}
+
+/* Placeholder do mapa */
+.map-placeholder {
+    height: 250px;
+    background-color: #f8f8f8;
+    border: 1px dashed #bbbbbb;
+    border-radius: 4px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #666666;
+}
+
+/* Grid de ferramentas */
+.tools-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.tool-card {
+    background-color: #ffffff;
+    border: 1px solid #dddddd;
+    border-radius: 6px;
+    padding: 18px;
+}
+
+.tool-card h3 {
+    margin-top: 0;
+}
+
+/* Botões */
+.tool-card button,
+.tool-form button {
+    background-color: #333333;
+    color: #ffffff;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.tool-card button:hover,
+.tool-form button:hover {
+    background-color: #222222;
+}
+
+.page-action {
+    margin-bottom: 20px;
+}
+
+.simple-button {
+    display: inline-block;
+    text-decoration: none;
+    background-color: #333333;
+    color: #ffffff;
+    padding: 10px 14px;
+    border-radius: 4px;
+}
+
+.simple-button:hover {
+    background-color: #222222;
+}
+
+/* Formulário */
+.tool-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.tool-form label {
+    margin-top: 10px;
+    margin-bottom: 6px;
+    font-weight: bold;
+}
+
+.tool-form input,
+.tool-form textarea {
+    padding: 10px 12px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    background-color: #fafafa;
+}
+
+.tool-form textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Dashboard */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+.stat-box {
+    background-color: #ffffff;
+    border: 1px solid #dddddd;
+    border-radius: 6px;
+    padding: 20px;
+    text-align: center;
+}
+
+.stat-box h3 {
+    margin-top: 0;
+}
+
+/* Responsivo */
+@media (max-width: 900px) {
+    .tools-grid,
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .sidebar {
+        width: 180px;
+    }
+}
+
+@media (max-width: 600px) {
+    .layout {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #dddddd;
+    }
+
+    .tools-grid,
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .topbar {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .search-box input {
+        width: 100%;
+    }
+}
