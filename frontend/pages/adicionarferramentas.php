@@ -29,7 +29,7 @@
     <meta name="description" content="Adicionar ferramenta">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adicionar Ferramenta - Tools 4 The Trade</title>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
     <div class="layout">
