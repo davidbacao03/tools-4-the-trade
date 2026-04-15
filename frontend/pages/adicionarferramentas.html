@@ -1,3 +1,27 @@
+<?php
+	session_start();
+	if(!isset($_SESSION['utl_id'])) header('Location: login.php');
+	$bd = new PDO("mysql:host=localhost;dbname=tools4thetrade", "root", "");
+
+	if(isset($_POST['nome'])) {
+		$q = "INSERT INTO ferramenta (fer_utl_id, fer_cat_id, fer_nome, fer_descricao, fer_preco_base, fer_preco, fer_lat, fer_lng) VALUES (?,?,?,?,?,?,?,?)";
+		$stat = $bd->prepare($q);
+		$stat->execute(array(
+			$_SESSION['utl_id'],
+			$_POST['cat'],
+			$_POST['nome'],
+			$_POST['descricao'],
+			$_POST['preco_base'],
+			$_POST['preco'],
+			$_POST['lat'],
+			$_POST['lng']
+		));
+		header('Location: Ferramentas.php');
+	}
+
+	$q = "SELECT * FROM categoria";
+	$cats = $bd->query($q)->fetchAll();
+?>
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -5,7 +29,7 @@
     <meta name="description" content="Adicionar ferramenta">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adicionar Ferramenta - Tools 4 The Trade</title>
-    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="layout">
@@ -13,9 +37,9 @@
         <aside class="sidebar">
             <h2 class="logo">Tools 4 The Trade</h2>
             <nav class="menu">
-                <a href="index.html">Home</a>
-                <a href="ferramentas.html">Ferramentas</a>
-                <a href="dashboard.html">Dashboard</a>
+                <a href="index.php">Home</a>
+                <a href="Ferramentas.php">Ferramentas</a>
+                <a href="dashboard.php">Dashboard</a>
             </nav>
         </aside>
 
@@ -31,21 +55,31 @@
                 <section class="form-section">
                     <h1>Adicionar Ferramenta</h1>
 
-                    <form class="tool-form">
-                        <label for="name">Nome da ferramenta</label>
-                        <input type="text" id="name" name="name">
+                    <form class="tool-form" action="" method="post">
+                        <label for="nome">Nome da ferramenta</label>
+                        <input type="text" id="nome" name="nome">
 
-                        <label for="category">Categoria</label>
-                        <input type="text" id="category" name="category">
+                        <label for="cat">Categoria</label>
+                        <select id="cat" name="cat">
+                        <?php foreach($cats as $c) { ?>
+                            <option value="<?php echo $c['cat_id']; ?>"><?php echo $c['cat_nome']; ?></option>
+                        <?php } ?>
+                        </select>
 
-                        <label for="price">Preço por dia</label>
-                        <input type="number" id="price" name="price">
+                        <label for="descricao">Descrição</label>
+                        <textarea id="descricao" name="descricao"></textarea>
 
-                        <label for="location">Localização</label>
-                        <input type="text" id="location" name="location">
+                        <label for="preco_base">Preço base (€/dia)</label>
+                        <input type="number" id="preco_base" name="preco_base" step="0.01">
 
-                        <label for="description">Descrição</label>
-                        <textarea id="description" name="description"></textarea>
+                        <label for="preco">Preço atual (€/dia)</label>
+                        <input type="number" id="preco" name="preco" step="0.01">
+
+                        <label for="lat">Latitude</label>
+                        <input type="text" id="lat" name="lat">
+
+                        <label for="lng">Longitude</label>
+                        <input type="text" id="lng" name="lng">
 
                         <button type="submit">Guardar</button>
                     </form>
@@ -54,6 +88,6 @@
         </div>
     </div>
 
-    <script src="../js/script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
