@@ -44,11 +44,11 @@ CREATE TABLE aluguer (
 )ENGINE=INNODB;
 
 INSERT INTO categoria (cat_nome) VALUES
-('Perfuração'),
-('Corte'),
-('Medição'),
+('Ferramentas Manuais'),
+('Ferramentas Elétricas'),
+('Ferramentas a Bateria'),
+('Medição e Traçagem'),
 ('Construção'),
 ('Jardim'),
-('Elétrica'),
-('Pintura'),
+('Mecânica'),
 ('Outros');
