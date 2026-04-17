@@ -1,6 +1,6 @@
 <?php
 	session_start();
-	// teste sem login :) if(!isset($_SESSION['utl_id'])) header('Location: login.php');
+	if(!isset($_SESSION['utl_id'])) header('Location: login.php');
 	$bd = new PDO("mysql:host=localhost;dbname=tools4thetrade", "root", "");
 
 	if(isset($_POST['nome'])) {
