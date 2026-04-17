@@ -29,8 +29,8 @@
                     <input type="text" placeholder="Pesquisar ferramenta...">
                 </div>
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <div class="profile-circle"></div>
                     <a href="logout.php">Sair</a>
+                    <div class="profile-circle"></div>
                 </div>
             </header>
 
