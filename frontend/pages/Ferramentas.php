@@ -29,6 +29,7 @@
                     <input type="text" placeholder="Pesquisar ferramenta...">
                 </div>
                 <div class="profile-circle"></div>
+                <a href="logout.php">Sair</a>
             </header>
 
             <main class="main-area">
