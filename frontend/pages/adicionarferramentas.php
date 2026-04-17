@@ -48,8 +48,10 @@
                 <div class="search-box">
                     <input type="text" placeholder="Pesquisar ferramenta...">
                 </div>
-                <div class="profile-circle"></div>
-                <a href="logout.php">Sair</a>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="profile-circle"></div>
+                    <a href="logout.php">Sair</a>
+                </div>
             </header>
 
             <main class="main-area">
