@@ -6,6 +6,11 @@
 <head>
 <title>Registar - Tools 4 The Trade</title>
 <meta charset="utf-8">
+<style>
+body { display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:Arial, sans-serif; }
+form { display:flex; flex-direction:column; gap:10px; width:300px; }
+h2 { text-align:center; }
+</style>
 <link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
