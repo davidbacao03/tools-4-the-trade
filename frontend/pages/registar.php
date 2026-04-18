@@ -7,28 +7,32 @@
 <title>Registar - Tools 4 The Trade</title>
 <meta charset="utf-8">
 <style>
-body { display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:Arial, sans-serif; }
-form { display:flex; flex-direction:column; gap:10px; width:300px; }
-h2 { text-align:center; }
+body { display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:Arial, sans-serif; background-color:#f5f5f5; }
+div { display:flex; flex-direction:column; gap:10px; width:300px; background-color:#ffffff; padding:30px; border:1px solid #dddddd; border-radius:6px; }
+h2 { text-align:center; margin:0; }
+input { padding:8px; border:1px solid #cccccc; border-radius:4px; }
+button { padding:10px; background-color:#333333; color:#ffffff; border:none; border-radius:4px; cursor:pointer; }
+a { text-align:center; color:#333333; }
 </style>
-<link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
+<div>
 <h2>Registar</h2>
 <?php
 	if(isset($_POST['nome'])) {
 		$q = "INSERT INTO utilizador (utl_nome, utl_email, utl_passe) VALUES (?,?,?)";
 		$stat = $bd->prepare($q);
 		$num = $stat->execute(array($_POST['nome'], $_POST['email'], $_POST['passe']));
-		if($num == 1) echo "Registo efetuado com sucesso";
+		if($num == 1) echo "<p>Registo efetuado com sucesso</p>";
 	}
 ?>
 <form action="" method="post">
-<p>Nome: <input type="text" name="nome"></p>
-<p>Email: <input type="email" name="email"></p>
-<p>Password: <input type="password" name="passe"></p>
-<p><button>Registar</button></p>
+<input type="text" name="nome" placeholder="Nome">
+<input type="email" name="email" placeholder="Email">
+<input type="password" name="passe" placeholder="Password">
+<button>Registar</button>
 </form>
-<p><a href="login.php">Já tens conta? Entra aqui</a></p>
+<a href="login.php">Já tens conta? Entra aqui</a>
+</div>
 </body>
 </html>

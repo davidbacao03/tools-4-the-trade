@@ -8,13 +8,16 @@
 <title>Login - Tools 4 The Trade</title>
 <meta charset="utf-8">
 <style>
-body { display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:Arial, sans-serif; }
-form { display:flex; flex-direction:column; gap:10px; width:300px; }
-h2 { text-align:center; }
+body { display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:Arial, sans-serif; background-color:#f5f5f5; }
+div { display:flex; flex-direction:column; gap:10px; width:300px; background-color:#ffffff; padding:30px; border:1px solid #dddddd; border-radius:6px; }
+h2 { text-align:center; margin:0; }
+input { padding:8px; border:1px solid #cccccc; border-radius:4px; }
+button { padding:10px; background-color:#333333; color:#ffffff; border:none; border-radius:4px; cursor:pointer; }
+a { text-align:center; color:#333333; }
 </style>
-<link rel="stylesheet" href="../css/style.css">
 </head>
 <body>
+<div>
 <h2>Login</h2>
 <?php
 	if(isset($_POST['email'])) {
@@ -28,15 +31,16 @@ h2 { text-align:center; }
 			$_SESSION['utl_admin'] = $linha['utl_admin'];
 			header('Location: index.php');
 		} else {
-			echo "Email ou password incorretos.";
+			echo "<p>Email ou password incorretos.</p>";
 		}
 	}
 ?>
 <form action="" method="post">
-<p>Email: <input type="email" name="email"></p>
-<p>Password: <input type="password" name="passe"></p>
-<p><button>Entrar</button></p>
+<input type="email" name="email" placeholder="Email">
+<input type="password" name="passe" placeholder="Password">
+<button>Entrar</button>
 </form>
-<p><a href="registar.php">Ainda não tens conta? Regista-te</a></p>
+<a href="registar.php">Ainda não tens conta? Regista-te</a>
+</div>
 </body>
 </html>
