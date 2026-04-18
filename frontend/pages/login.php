@@ -9,7 +9,7 @@
 <meta charset="utf-8">
 <style>
 body { display:flex; justify-content:center; align-items:center; height:100vh; margin:0; font-family:Arial, sans-serif; background-color:#f5f5f5; }
-div { display:flex; flex-direction:column; gap:10px; width:300px; background-color:#ffffff; padding:30px; border:1px solid #dddddd; border-radius:6px; }
+div { display:flex; flex-direction:column; gap:10px; width:400px; background-color:#ffffff; padding:30px; border:1px solid #dddddd; border-radius:6px; }
 h2 { text-align:center; margin:0; }
 input { padding:8px; border:1px solid #cccccc; border-radius:4px; }
 button { padding:10px; background-color:#333333; color:#ffffff; border:none; border-radius:4px; cursor:pointer; }
