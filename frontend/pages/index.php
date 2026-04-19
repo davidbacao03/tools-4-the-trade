@@ -1,7 +1,13 @@
 <?php
 	session_start();
 	if(!isset($_SESSION['utl_id'])) header('Location: registar.php');
+	$bd = new PDO("mysql:host=localhost;dbname=tools4thetrade", "root", "");
+	$q = "SELECT f.*, c.cat_nome FROM ferramenta f
+	      JOIN categoria c ON f.fer_cat_id = c.cat_id
+	      WHERE f.fer_ativa = 1 AND f.fer_lat IS NOT NULL AND f.fer_lng IS NOT NULL";
+	$ferramentas = $bd->query($q)->fetchAll(PDO::FETCH_ASSOC);
 ?>
+
 <!DOCTYPE html>
 <html lang="pt">
 <head>
@@ -10,6 +16,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tools 4 The Trade</title>
     <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #mapa { height: 400px; width: 100%; border-radius: 8px; }
+    </style>
 </head>
 <body>
     <div class="layout">
@@ -20,6 +30,7 @@
                 <a href="index.php">Home</a>
                 <a href="ferramentas.php">Ferramentas</a>
                 <a href="dashboard.php">Dashboard</a>
+                <a href="mapa.php">Mapa</a>
             </nav>
         </aside>
 
@@ -42,9 +53,25 @@
 
                 <section class="map-section">
                     <h2>Mapa de Ferramentas</h2>
-                    <div class="map-placeholder">
-                        Mapa OpenStreetMap aqui
-                    </div>
+                    <div id="mapa"></div>
+                        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+        <script>
+             const map = L.map('mapa').setView([39.5, -8.0], 7);
+             L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+             attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+             }).addTo(map);
+
+             const ferramentas = <?php echo json_encode($ferramentas); ?>;
+              ferramentas.forEach(function(f) {
+                   L.marker([parseFloat(f.fer_lat), parseFloat(f.fer_lng)])
+                    .addTo(map)
+                         .bindPopup(
+                    '<b>' + f.fer_nome + '</b><br>' +
+                    'Categoria: ' + f.cat_nome + '<br>' +
+                    'Preço: ' + f.fer_preco + '€/dia'
+                );
+        });
+    </script>
                 </section>
 
                 <section class="tools-section">

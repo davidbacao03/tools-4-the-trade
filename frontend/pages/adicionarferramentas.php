@@ -30,6 +30,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Adicionar Ferramenta - Tools 4 The Trade</title>
     <link rel="stylesheet" href="../css/style.css">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #mapa { height: 350px; width: 100%; border-radius: 8px; margin-bottom: 8px; border: 1px solid #ccc; }
+        #mapa-info { font-size: 0.85rem; color: #666; margin-bottom: 16px; }
+    </style>
 </head>
 <body>
     <div class="layout">
@@ -78,6 +84,10 @@
                         <label for="preco">Preço atual (€/dia)</label>
                         <input type="number" id="preco" name="preco" step="0.01">
 
+                        <label>Localização da ferramenta</label>
+                        <div id="mapa"></div>
+                        <p id="mapa-info">📍 Clica no mapa para definir a localização da ferramenta.</p>
+
                         <label for="lat">Latitude</label>
                         <input type="text" id="lat" name="lat">
 
@@ -92,5 +102,31 @@
     </div>
 
     <script src="../js/script.js"></script>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // esconder campos latitude/longitude (o mapa preenche)
+        document.getElementById('lat').closest('label') && (document.querySelector('label[for="lat"]').style.display = 'none');
+        document.getElementById('lat').style.display = 'none';
+        document.querySelector('label[for="lng"]').style.display = 'none';
+        document.getElementById('lng').style.display = 'none';
+
+        const map = L.map('mapa').setView([39.5, -8.0], 7);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        let marcador = null;
+        map.locate({ setView: true, maxZoom: 14 });
+
+        map.on('click', function(e) {
+            document.getElementById('lat').value = e.latlng.lat.toFixed(7);
+            document.getElementById('lng').value = e.latlng.lng.toFixed(7);
+            document.getElementById('mapa-info').textContent =
+                '📍 Localização selecionada: ' + e.latlng.lat.toFixed(7) + ', ' + e.latlng.lng.toFixed(7);
+            if (marcador) { marcador.setLatLng(e.latlng); }
+            else { marcador = L.marker(e.latlng).addTo(map).bindPopup('Localização da ferramenta').openPopup(); }
+        });
+    </script>
 </body>
 </html>
