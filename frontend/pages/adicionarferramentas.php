@@ -86,7 +86,7 @@
 
                         <label>Localização da ferramenta</label>
                         <div id="mapa"></div>
-                        <p id="mapa-info">📍 Clica no mapa para definir a localização da ferramenta.</p>
+                        <p id="mapa-info"> Clica no mapa para definir a localização da ferramenta.</p>
 
                         <label for="lat">Latitude</label>
                         <input type="text" id="lat" name="lat">
@@ -123,7 +123,7 @@
             document.getElementById('lat').value = e.latlng.lat.toFixed(7);
             document.getElementById('lng').value = e.latlng.lng.toFixed(7);
             document.getElementById('mapa-info').textContent =
-                '📍 Localização selecionada: ' + e.latlng.lat.toFixed(7) + ', ' + e.latlng.lng.toFixed(7);
+                'Localização selecionada: ' + e.latlng.lat.toFixed(7) + ', ' + e.latlng.lng.toFixed(7);
             if (marcador) { marcador.setLatLng(e.latlng); }
             else { marcador = L.marker(e.latlng).addTo(map).bindPopup('Localização da ferramenta').openPopup(); }
         });
