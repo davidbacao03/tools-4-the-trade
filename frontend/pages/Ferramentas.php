@@ -35,7 +35,7 @@
                 </div>
                 <div style="display:flex; align-items:center; gap:10px;">
                     <a href="logout.php">Sair</a>
-                    <div class="profile-circle"></div>
+                    <a href="perfil.php" class="profile-circle" title="Perfil"></a>
                 </div>
             </header>
 
@@ -56,7 +56,7 @@
                                     <h3><?php echo htmlspecialchars($f['fer_nome']); ?></h3>
                                     <p>Categoria: <?php echo htmlspecialchars($f['cat_nome']); ?></p>
                                     <p><?php echo number_format($f['fer_preco'], 2); ?>€/dia</p>
-                                    <button>Alugar</button>
+                                    <a href="alugarferramenta.php?id=<?php echo $f['fer_id']; ?>" class="simple-button">Alugar</a>
                                 </article>
                             <?php endforeach; ?>
                         <?php endif; ?>

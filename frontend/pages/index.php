@@ -77,7 +77,7 @@
                 </div>
                 <div style="display:flex; align-items:center; gap:10px;">
                     <a href="logout.php">Sair</a>
-                    <div class="profile-circle"></div>
+                    <a href="perfil.php" class="profile-circle" title="Perfil"></a>
                 </div>
             </header>
 
@@ -123,6 +123,7 @@
                                     <p>Categoria: <?php echo htmlspecialchars($f['cat_nome']); ?></p>
                                     <p><?php echo number_format($f['fer_preco'], 2); ?>€/dia</p>
                                     <button class="btn-ver-mais"
+                                        data-id="<?php echo $f['fer_id']; ?>"
                                         data-nome="<?php echo htmlspecialchars($f['fer_nome'], ENT_QUOTES); ?>"
                                         data-categoria="<?php echo htmlspecialchars($f['cat_nome'], ENT_QUOTES); ?>"
                                         data-descricao="<?php echo htmlspecialchars($f['fer_descricao'] ?? '', ENT_QUOTES); ?>"
@@ -146,7 +147,7 @@
             <div class="modal-field"><span class="modal-label">Preço base:</span><span id="modalPrecoBase"></span>€/dia</div>
             <div class="modal-field"><span class="modal-label">Preço atual:</span><span id="modalPreco"></span>€/dia</div>
             <div class="modal-actions">
-                <a href="alugarferramenta.php" class="simple-button">Alugar</a>
+                <a href="#" id="modalAlugarLink" class="simple-button">Alugar</a>
             </div>
         </div>
     </div>
@@ -161,6 +162,7 @@
                 document.getElementById('modalDescricao').textContent = btn.dataset.descricao || 'Sem descrição disponível.';
                 document.getElementById('modalPreco').textContent = btn.dataset.preco;
                 document.getElementById('modalPrecoBase').textContent = btn.dataset.precoBase;
+                document.getElementById('modalAlugarLink').href = 'alugarferramenta.php?id=' + btn.dataset.id;
                 overlay.classList.add('active');
             });
         });
