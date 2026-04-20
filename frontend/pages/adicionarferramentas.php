@@ -55,7 +55,6 @@
                     <input type="text" placeholder="Pesquisar ferramenta...">
                 </div>
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <a href="logout.php">Sair</a>
                     <a href="perfil.php" class="profile-circle" title="Perfil"></a>
                 </div>
             </header>

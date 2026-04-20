@@ -8,12 +8,13 @@
     if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alu_id'], $_POST['estado'])) {
         $estados = ['Reservado', 'Alugado', 'Devolvido'];
         if(in_array($_POST['estado'], $estados)) {
+            $devolvido = $_POST['estado'] === 'Devolvido' ? date('Y-m-d H:i:s') : null;
             $upd = $bd->prepare(
-                "UPDATE aluguer SET alu_estado = ?
+                "UPDATE aluguer SET alu_estado = ?, alu_devolvido = ?
                  WHERE alu_id = ?
                    AND alu_fer_id IN (SELECT fer_id FROM ferramenta WHERE fer_utl_id = ?)"
             );
-            $upd->execute([$_POST['estado'], (int)$_POST['alu_id'], $uid]);
+            $upd->execute([$_POST['estado'], $devolvido, (int)$_POST['alu_id'], $uid]);
         }
         header('Location: perfil.php');
         exit;
