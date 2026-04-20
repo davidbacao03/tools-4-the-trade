@@ -37,7 +37,7 @@ CREATE TABLE aluguer (
 	alu_utl_id	INT,
 	alu_inicio	DATE,
 	alu_fim		DATE,
-	alu_preco	DECIMAL(8,2),
+	alu_estado	ENUM('reservado', 'alugado', 'devolvido') DEFAULT 'reservado',
 	alu_criado	DATETIME DEFAULT CURRENT_TIMESTAMP,
 	FOREIGN KEY (alu_fer_id) REFERENCES ferramenta(fer_id),
 	FOREIGN KEY (alu_utl_id) REFERENCES utilizador(utl_id)
