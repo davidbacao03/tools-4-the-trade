@@ -1,6 +1,11 @@
 <?php
 	session_start();
 	if(!isset($_SESSION['utl_id'])) header('Location: login.php');
+	$bd = new PDO("mysql:host=localhost;dbname=tools4thetrade", "root", "");
+	$q = "SELECT f.*, c.cat_nome FROM ferramenta f
+	      JOIN categoria c ON f.fer_cat_id = c.cat_id
+	      WHERE f.fer_ativa = 1";
+	$ferramentas = $bd->query($q)->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="pt">
@@ -43,33 +48,18 @@
                     </div>
 
                     <div class="tools-grid">
-                        <article class="tool-card">
-                            <h3>Berbequim</h3>
-                            <p>Categoria: Elétrica</p>
-                            <p>Preço: 10€/dia</p>
-                            <button>Alugar</button>
-                        </article>
-
-                        <article class="tool-card">
-                            <h3>Martelo</h3>
-                            <p>Categoria: Manual</p>
-                            <p>Preço: 4€/dia</p>
-                            <button>Alugar</button>
-                        </article>
-
-                        <article class="tool-card">
-                            <h3>Escadote</h3>
-                            <p>Categoria: Construção</p>
-                            <p>Preço: 9€/dia</p>
-                            <button>Alugar</button>
-                        </article>
-
-                        <article class="tool-card">
-                            <h3>Lixadora</h3>
-                            <p>Categoria: Elétrica</p>
-                            <p>Preço: 11€/dia</p>
-                            <button>Alugar</button>
-                        </article>
+                        <?php if(empty($ferramentas)): ?>
+                            <p>Não existem ferramentas disponíveis de momento.</p>
+                        <?php else: ?>
+                            <?php foreach($ferramentas as $f): ?>
+                                <article class="tool-card">
+                                    <h3><?php echo htmlspecialchars($f['fer_nome']); ?></h3>
+                                    <p>Categoria: <?php echo htmlspecialchars($f['cat_nome']); ?></p>
+                                    <p><?php echo number_format($f['fer_preco'], 2); ?>€/dia</p>
+                                    <button>Alugar</button>
+                                </article>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </div>
                 </section>
             </main>
