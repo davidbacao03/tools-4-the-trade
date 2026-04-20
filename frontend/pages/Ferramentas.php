@@ -2,7 +2,9 @@
 	session_start();
 	if(!isset($_SESSION['utl_id'])) header('Location: login.php');
 	$bd = new PDO("mysql:host=localhost;dbname=tools4thetrade", "root", "");
-	$q = "SELECT f.*, c.cat_nome FROM ferramenta f
+	$q = "SELECT f.*, c.cat_nome,
+	             (SELECT COUNT(*) FROM aluguer a WHERE a.alu_fer_id = f.fer_id AND a.alu_estado IN ('Reservado','Alugado')) > 0 AS ocupada
+	      FROM ferramenta f
 	      JOIN categoria c ON f.fer_cat_id = c.cat_id
 	      WHERE f.fer_ativa = 1";
 	$ferramentas = $bd->query($q)->fetchAll(PDO::FETCH_ASSOC);
@@ -56,7 +58,11 @@
                                     <h3><?php echo htmlspecialchars($f['fer_nome']); ?></h3>
                                     <p>Categoria: <?php echo htmlspecialchars($f['cat_nome']); ?></p>
                                     <p><?php echo number_format($f['fer_preco'], 2); ?>€/dia</p>
-                                    <a href="alugarferramenta.php?id=<?php echo $f['fer_id']; ?>" class="simple-button">Alugar</a>
+                                    <?php if($f['ocupada']): ?>
+                                        <span class="badge-indisponivel">Indisponível</span>
+                                    <?php else: ?>
+                                        <a href="alugarferramenta.php?id=<?php echo $f['fer_id']; ?>" class="simple-button">Alugar</a>
+                                    <?php endif; ?>
                                 </article>
                             <?php endforeach; ?>
                         <?php endif; ?>

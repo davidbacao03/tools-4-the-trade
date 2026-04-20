@@ -15,10 +15,16 @@
     $f = $stmt->fetch(PDO::FETCH_ASSOC);
     if(!$f) { header('Location: ferramentas.php'); exit; }
 
+    $chk = $bd->prepare("SELECT COUNT(*) FROM aluguer WHERE alu_fer_id = ? AND alu_estado IN ('Reservado','Alugado')");
+    $chk->execute([$id]);
+    $ocupada = $chk->fetchColumn() > 0;
+
     $erro = '';
     $sucesso = false;
 
-    if($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if($ocupada && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $erro = 'Esta ferramenta já se encontra reservada ou alugada.';
+    } elseif($_SERVER['REQUEST_METHOD'] === 'POST') {
         $inicio = $_POST['inicio'] ?? '';
         $fim    = $_POST['fim']    ?? '';
 
@@ -119,6 +125,10 @@
                     <?php if($sucesso): ?>
                         <div class="msg-sucesso">
                             Aluguer registado com sucesso! <a href="index.php">Voltar ao início</a>
+                        </div>
+                    <?php elseif($ocupada): ?>
+                        <div class="msg-erro">
+                            Esta ferramenta já se encontra reservada ou alugada. <a href="ferramentas.php">Ver outras ferramentas</a>
                         </div>
                     <?php else: ?>
 
