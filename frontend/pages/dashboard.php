@@ -4,6 +4,12 @@
 
     $bd = new PDO("mysql:host=localhost;dbname=tools4thetrade", "root", "");
     $uid = $_SESSION['utl_id'];
+    if(!array_key_exists('utl_foto', $_SESSION)) {
+        $fotoQ = $bd->prepare("SELECT utl_foto FROM utilizador WHERE utl_id = ?");
+        $fotoQ->execute([$uid]);
+        $_SESSION['utl_foto'] = $fotoQ->fetchColumn() ?: '';
+    }
+    $userFoto = $_SESSION['utl_foto'];
 
     // Overview counts
     $totalMinhas = $bd->prepare("SELECT COUNT(*) FROM ferramenta WHERE fer_utl_id = ? AND fer_ativa = 1");
@@ -88,73 +94,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Tools 4 The Trade</title>
     <link rel="stylesheet" href="../css/style.css">
-    <style>
-        .stats-grid-2 {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 24px;
-        }
-        .stat-box-accent {
-            background: #333;
-            color: #fff;
-            border-radius: 6px;
-            padding: 20px;
-            text-align: center;
-        }
-        .stat-box-accent h3 { margin: 0 0 8px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.75; }
-        .stat-box-accent .stat-num { font-size: 2rem; font-weight: bold; }
-        .stat-box { text-align: center; }
-        .stat-box h3 { margin: 0 0 8px; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: #777; }
-        .stat-box .stat-num { font-size: 2rem; font-weight: bold; }
-
-        .dash-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.92rem;
-        }
-        .dash-table th {
-            text-align: left;
-            padding: 10px 12px;
-            border-bottom: 2px solid #ddd;
-            color: #555;
-            font-size: 0.82rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-        .dash-table td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #eee;
-            vertical-align: middle;
-        }
-        .dash-table tr:last-child td { border-bottom: none; }
-        .dash-table tr:hover td { background: #fafafa; }
-
-        .usage-bar-wrap { width: 100px; background: #eee; border-radius: 4px; height: 8px; display: inline-block; vertical-align: middle; }
-        .usage-bar { background: #333; border-radius: 4px; height: 8px; }
-
-        .estado-badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 0.78rem;
-            font-weight: bold;
-        }
-        .estado-Reservado { background: #fff3cd; color: #856404; }
-        .estado-Alugado   { background: #d1ecf1; color: #0c5460; }
-        .estado-Devolvido { background: #d4edda; color: #155724; }
-        .estado-Disponivel { background: #e9ecef; color: #495057; }
-
-        .dias-restantes { font-size: 0.8rem; color: #777; margin-top: 2px; }
-        .dias-restantes.urgente { color: #c0392b; font-weight: bold; }
-
-        .section-title { margin-top: 0; margin-bottom: 16px; font-size: 1.05rem; }
-        .empty-msg { color: #999; font-size: 0.9rem; }
-
-        @media(max-width: 900px) {
-            .stats-grid-2 { grid-template-columns: repeat(2, 1fr); }
-        }
-    </style>
 </head>
 <body>
     <div class="layout">
@@ -165,6 +104,7 @@
                 <a href="index.php">Home</a>
                 <a href="Ferramentas.php">Ferramentas</a>
                 <a href="dashboard.php">Dashboard</a>
+                <a href="calendario.php">Calendário</a>
             </nav>
         </aside>
 
@@ -174,7 +114,7 @@
                     <input type="text" placeholder="Pesquisar ferramenta...">
                 </div>
                 <div style="display:flex; align-items:center; gap:10px;">
-                    <a href="perfil.php" class="profile-circle" title="Perfil"></a>
+                    <a href="perfil.php" class="profile-circle" title="Perfil" <?php if(!empty($userFoto)): ?>style="background-image:url('<?php echo htmlspecialchars($userFoto); ?>');background-size:cover;background-color:transparent;"<?php endif; ?>></a>
                 </div>
             </header>
 

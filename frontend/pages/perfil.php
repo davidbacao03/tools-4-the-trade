@@ -5,6 +5,24 @@
     $bd = new PDO("mysql:host=localhost;dbname=tools4thetrade", "root", "");
     $uid = $_SESSION['utl_id'];
 
+    // Delete tool handler
+    if($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_tool') {
+        $ferId = (int)($_POST['fer_id'] ?? 0);
+        $own = $bd->prepare("SELECT fer_id FROM ferramenta WHERE fer_id = ? AND fer_utl_id = ?");
+        $own->execute([$ferId, $uid]);
+        if($own->fetchColumn()) {
+            // Get image paths before deleting
+            $imgPaths = $bd->prepare("SELECT img_path FROM ferramenta_imagem WHERE img_fer_id = ?");
+            $imgPaths->execute([$ferId]);
+            foreach($imgPaths->fetchAll(PDO::FETCH_COLUMN) as $p) { @unlink(__DIR__ . '/' . $p); }
+            // Delete rentals then tool (cascade removes images from DB)
+            $bd->prepare("DELETE FROM aluguer WHERE alu_fer_id = ?")->execute([$ferId]);
+            $bd->prepare("DELETE FROM ferramenta WHERE fer_id = ? AND fer_utl_id = ?")->execute([$ferId, $uid]);
+        }
+        header('Location: perfil.php'); exit;
+    }
+
+    // Rental status update handler
     if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alu_id'], $_POST['estado'])) {
         $estados = ['Reservado', 'Alugado', 'Devolvido'];
         if(in_array($_POST['estado'], $estados)) {
@@ -16,13 +34,16 @@
             );
             $upd->execute([$_POST['estado'], $devolvido, (int)$_POST['alu_id'], $uid]);
         }
-        header('Location: perfil.php');
-        exit;
+        header('Location: perfil.php'); exit;
     }
 
     $stmt = $bd->prepare("SELECT * FROM utilizador WHERE utl_id = ?");
     $stmt->execute([$uid]);
     $utl = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Cache user photo in session
+    $_SESSION['utl_foto'] = $utl['utl_foto'] ?? '';
+    $userFoto = $_SESSION['utl_foto'];
 
     $ferramentas = $bd->prepare(
         "SELECT f.*, c.cat_nome FROM ferramenta f
@@ -64,70 +85,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfil - Tools 4 The Trade</title>
     <link rel="stylesheet" href="../css/style.css">
-    <style>
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-            margin-bottom: 10px;
-        }
-        .profile-avatar {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            background: #444;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .profile-avatar svg {
-            width: 50px;
-            height: 50px;
-            fill: #aaa;
-        }
-        .profile-name { font-size: 1.4rem; font-weight: bold; margin: 0 0 4px; }
-        .profile-meta { color: #666; font-size: 0.9rem; }
-        .profile-meta span { margin-right: 16px; }
-
-        .estado-badge {
-            display: inline-block;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-        .estado-Reservado  { background: #fff3cd; color: #856404; }
-        .estado-Alugado    { background: #d1ecf1; color: #0c5460; }
-        .estado-Devolvido  { background: #d4edda; color: #155724; }
-        .estado-select {
-            border-radius: 12px;
-            border: none;
-            padding: 3px 10px;
-            font-size: 0.8rem;
-            font-weight: bold;
-            cursor: pointer;
-            appearance: none;
-        }
-
-        .profile-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.92rem;
-        }
-        .profile-table th {
-            text-align: left;
-            padding: 10px 12px;
-            border-bottom: 2px solid #ddd;
-            color: #555;
-        }
-        .profile-table td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #eee;
-        }
-        .profile-table tr:last-child td { border-bottom: none; }
-        .empty-msg { color: #999; font-size: 0.9rem; padding: 12px 0; }
-    </style>
 </head>
 <body>
     <div class="layout">
@@ -138,6 +95,7 @@
                 <a href="index.php">Home</a>
                 <a href="Ferramentas.php">Ferramentas</a>
                 <a href="dashboard.php">Dashboard</a>
+                <a href="calendario.php">Calendário</a>
             </nav>
         </aside>
 
@@ -148,7 +106,8 @@
                 </div>
                 <div style="display:flex; align-items:center; gap:10px;">
                     <a href="logout.php">Sair</a>
-                    <a href="perfil.php" class="profile-circle" title="Perfil"></a>
+                    <a href="perfil.php" class="profile-circle" title="Perfil"
+                       <?php if(!empty($userFoto)): ?>style="background-image:url('<?php echo htmlspecialchars($userFoto); ?>');background-size:cover;background-color:transparent;"<?php endif; ?>></a>
                 </div>
             </header>
 
@@ -156,20 +115,26 @@
 
                 <section class="form-section">
                     <div class="profile-header">
-                        <div class="profile-avatar">
-                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="profile-name"><?php echo htmlspecialchars($utl['utl_nome']); ?></p>
-                            <div class="profile-meta">
-                                <span><?php echo htmlspecialchars($utl['utl_email']); ?></span>
-                                <?php if($utl['utl_admin']): ?>
-                                    <span style="color:#333;font-weight:bold;">Admin</span>
-                                <?php endif; ?>
-                                <span>Membro desde <?php echo date('M Y', strtotime($utl['utl_criado'])); ?></span>
+                        <div class="profile-avatar" id="avatarClick" title="Clica para alterar a foto de perfil">
+                            <?php if(!empty($utl['utl_foto'])): ?>
+                                <img id="avatarImg" src="<?php echo htmlspecialchars($utl['utl_foto']); ?>" alt="Foto de perfil">
+                            <?php else: ?>
+                                <svg id="avatarSvg" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/>
+                                </svg>
+                            <?php endif; ?>
+                            <div class="avatar-edit-overlay">
+                                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 15.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4z"/><path d="M9 2 7.17 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3.17L15 2H9zm3 15a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg>
                             </div>
+                            <input type="file" id="avatarInput" accept="image/*" style="display:none;">
+                        </div>
+                        <p class="profile-name"><?php echo htmlspecialchars($utl['utl_nome']); ?></p>
+                        <div class="profile-meta">
+                            <span><?php echo htmlspecialchars($utl['utl_email']); ?></span>
+                            <?php if($utl['utl_admin']): ?>
+                                <span style="color:#333;font-weight:600;">Admin</span>
+                            <?php endif; ?>
+                            <span>Membro desde <?php echo date('M Y', strtotime($utl['utl_criado'])); ?></span>
                         </div>
                     </div>
                 </section>
@@ -186,6 +151,7 @@
                                     <th>Categoria</th>
                                     <th>Preço atual</th>
                                     <th>Estado</th>
+                                    <th></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -195,6 +161,14 @@
                                     <td><?php echo htmlspecialchars($f['cat_nome']); ?></td>
                                     <td><?php echo number_format($f['fer_preco'], 2); ?>€/dia</td>
                                     <td><?php echo $f['fer_ativa'] ? 'Ativa' : 'Inativa'; ?></td>
+                                    <td style="display:flex; gap:8px; align-items:center;">
+                                        <a href="editarferramenta.php?id=<?php echo $f['fer_id']; ?>" class="simple-button" style="font-size:0.8rem; padding:6px 12px;">Editar</a>
+                                        <form method="post" style="margin:0;" onsubmit="return confirm('Tens a certeza que queres apagar &quot;<?php echo htmlspecialchars($f['fer_nome'], ENT_QUOTES); ?>&quot;? Esta ação não pode ser desfeita.')">
+                                            <input type="hidden" name="action" value="delete_tool">
+                                            <input type="hidden" name="fer_id" value="<?php echo $f['fer_id']; ?>">
+                                            <button type="submit" class="simple-button" style="background:#c0392b; font-size:0.8rem; padding:6px 12px;">Apagar</button>
+                                        </form>
+                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -278,5 +252,43 @@
     </div>
 
     <script src="../js/script.js"></script>
+    <script>
+    (function() {
+        var avatarClick = document.getElementById('avatarClick');
+        var avatarInput = document.getElementById('avatarInput');
+        if(!avatarClick) return;
+
+        avatarClick.addEventListener('click', function() { avatarInput.click(); });
+
+        avatarInput.addEventListener('change', function() {
+            if(!this.files[0]) return;
+            var fd = new FormData();
+            fd.append('foto', this.files[0]);
+            fetch('uploadfoto.php', { method: 'POST', body: fd })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if(!data.path) return;
+                    var existing = document.getElementById('avatarImg');
+                    var svg = document.getElementById('avatarSvg');
+                    if(existing) {
+                        existing.src = data.path + '?t=' + Date.now();
+                    } else {
+                        if(svg) svg.remove();
+                        var img = document.createElement('img');
+                        img.id = 'avatarImg';
+                        img.alt = 'Foto de perfil';
+                        img.src = data.path;
+                        avatarClick.insertBefore(img, avatarClick.firstChild);
+                    }
+                    var circle = document.querySelector('.profile-circle');
+                    if(circle) {
+                        circle.style.backgroundImage = 'url(' + data.path + '?t=' + Date.now() + ')';
+                        circle.style.backgroundSize  = 'cover';
+                        circle.style.backgroundColor = 'transparent';
+                    }
+                });
+        });
+    })();
+    </script>
 </body>
 </html>
