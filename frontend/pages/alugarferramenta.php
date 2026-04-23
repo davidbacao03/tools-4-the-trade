@@ -1,0 +1,167 @@
+<?php
+    session_start();
+    if(!isset($_SESSION['utl_id'])) header('Location: login.php');
+
+    $bd = new PDO("mysql:host=localhost;dbname=tools4thetrade", "root", "");
+    if(!array_key_exists('utl_foto', $_SESSION)) {
+        $fotoQ = $bd->prepare("SELECT utl_foto FROM utilizador WHERE utl_id = ?");
+        $fotoQ->execute([$_SESSION['utl_id']]);
+        $_SESSION['utl_foto'] = $fotoQ->fetchColumn() ?: '';
+    }
+    $userFoto = $_SESSION['utl_foto'];
+
+    $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+    if($id === 0) { header('Location: ferramentas.php'); exit; }
+
+    $q = "SELECT f.*, c.cat_nome FROM ferramenta f
+          JOIN categoria c ON f.fer_cat_id = c.cat_id
+          WHERE f.fer_id = ? AND f.fer_ativa = 1";
+    $stmt = $bd->prepare($q);
+    $stmt->execute([$id]);
+    $f = $stmt->fetch(PDO::FETCH_ASSOC);
+    if(!$f) { header('Location: ferramentas.php'); exit; }
+
+    $chk = $bd->prepare("SELECT COUNT(*) FROM aluguer WHERE alu_fer_id = ? AND alu_estado IN ('Reservado','Alugado')");
+    $chk->execute([$id]);
+    $ocupada = $chk->fetchColumn() > 0;
+
+    $imgStmt = $bd->prepare("SELECT img_path FROM ferramenta_imagem WHERE img_fer_id = ? ORDER BY img_principal DESC, img_ordem ASC");
+    $imgStmt->execute([$id]);
+    $imagens = $imgStmt->fetchAll(PDO::FETCH_COLUMN);
+
+    $erro = '';
+    $sucesso = false;
+
+    if($ocupada && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $erro = 'Esta ferramenta já se encontra reservada ou alugada.';
+    } elseif($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $inicio = $_POST['inicio'] ?? '';
+        $fim    = $_POST['fim']    ?? '';
+
+        if(!$inicio || !$fim) {
+            $erro = 'Por favor preenche as datas de início e fim.';
+        } elseif($fim <= $inicio) {
+            $erro = 'A data de fim tem de ser posterior à data de início.';
+        } else {
+            $ins = "INSERT INTO aluguer (alu_fer_id, alu_utl_id, alu_inicio, alu_fim)
+                    VALUES (?, ?, ?, ?)";
+            $stmt2 = $bd->prepare($ins);
+            $stmt2->execute([$id, $_SESSION['utl_id'], $inicio, $fim]);
+            $sucesso = true;
+        }
+    }
+
+    $hoje = date('Y-m-d');
+?>
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alugar Ferramenta - Tools 4 The Trade</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <div class="layout">
+
+        <aside class="sidebar">
+            <h2 class="logo">Tools 4 The Trade</h2>
+            <nav class="menu">
+                <a href="index.php">Home</a>
+                <a href="Ferramentas.php">Ferramentas</a>
+                <a href="dashboard.php">Dashboard</a>
+                <a href="calendario.php">Calendário</a>
+            </nav>
+        </aside>
+
+        <div class="content">
+            <header class="topbar">
+                <div class="search-box">
+                    <input type="text" placeholder="Pesquisar ferramenta...">
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <a href="perfil.php" class="profile-circle" title="Perfil" <?php if(!empty($userFoto)): ?>style="background-image:url('<?php echo htmlspecialchars($userFoto); ?>');background-size:cover;background-color:transparent;"<?php endif; ?>></a>
+                </div>
+            </header>
+
+            <main class="main-area">
+                <section class="form-section">
+                    <h1>Alugar Ferramenta</h1>
+
+                    <?php if($sucesso): ?>
+                        <div class="msg-sucesso">
+                            Aluguer registado com sucesso! <a href="index.php">Voltar ao início</a>
+                        </div>
+                    <?php elseif($ocupada): ?>
+                        <div class="msg-erro">
+                            Esta ferramenta já se encontra reservada ou alugada. <a href="ferramentas.php">Ver outras ferramentas</a>
+                        </div>
+                    <?php else: ?>
+
+                    <?php if($erro): ?>
+                        <div class="msg-erro"><?php echo htmlspecialchars($erro); ?></div>
+                    <?php endif; ?>
+
+                    <?php if(!empty($imagens)): ?>
+                    <div class="galeria-ferramenta">
+                        <img id="galeriaMain" class="galeria-img-main"
+                             src="<?php echo htmlspecialchars($imagens[0]); ?>"
+                             alt="<?php echo htmlspecialchars($f['fer_nome']); ?>">
+                        <?php if(count($imagens) > 1): ?>
+                        <div class="galeria-thumbs">
+                            <?php foreach($imagens as $i => $img): ?>
+                                <img src="<?php echo htmlspecialchars($img); ?>"
+                                     class="galeria-thumb<?php echo $i === 0 ? ' active' : ''; ?>"
+                                     data-full="<?php echo htmlspecialchars($img); ?>"
+                                     alt="">
+                            <?php endforeach; ?>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+
+                    <div class="rental-grid">
+                        <div class="tool-info-card">
+                            <h2><?php echo htmlspecialchars($f['fer_nome']); ?></h2>
+                            <div class="info-row">
+                                <span class="info-label">Categoria:</span><?php echo htmlspecialchars($f['cat_nome']); ?>
+                            </div>
+                            <?php if($f['fer_descricao']): ?>
+                            <div class="info-row">
+                                <span class="info-label">Descrição:</span><?php echo htmlspecialchars($f['fer_descricao']); ?>
+                            </div>
+                            <?php endif; ?>
+                            <div class="info-row">
+                                <span class="info-label">Preço base:</span><?php echo number_format($f['fer_preco_base'], 2); ?>€/dia
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Preço atual:</span><?php echo number_format($f['fer_preco'], 2); ?>€/dia
+                            </div>
+                        </div>
+
+                        <form class="tool-form" method="post" data-preco="<?php echo (float)$f['fer_preco']; ?>">
+                            <label for="inicio">Data de início</label>
+                            <input type="date" id="inicio" name="inicio" min="<?php echo $hoje; ?>"
+                                   value="<?php echo htmlspecialchars($_POST['inicio'] ?? ''); ?>">
+
+                            <label for="fim">Data de fim</label>
+                            <input type="date" id="fim" name="fim" min="<?php echo $hoje; ?>"
+                                   value="<?php echo htmlspecialchars($_POST['fim'] ?? ''); ?>">
+
+                            <div class="price-summary" id="resumoPreco" style="display:none;">
+                                Total estimado: <span id="totalPreco"></span>
+                            </div>
+
+                            <button type="submit" style="margin-top:16px;">Confirmar aluguer</button>
+                        </form>
+                    </div>
+
+                    <?php endif; ?>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script src="../js/script.js"></script>
+</body>
+</html>
