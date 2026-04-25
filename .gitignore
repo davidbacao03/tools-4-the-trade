@@ -128,6 +128,9 @@ dist
 # VSCode workspace settings
 .vscode/
 
+# Claude Code local settings
+.claude/
+
 # User uploaded files
 frontend/pages/uploads/ferramentas/*
 frontend/pages/uploads/perfis/*
