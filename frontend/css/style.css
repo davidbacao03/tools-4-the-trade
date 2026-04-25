@@ -2,6 +2,11 @@
     box-sizing: border-box;
 }
 
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+
 body {
     margin: 0;
     font-family: Arial, sans-serif;
@@ -11,7 +16,8 @@ body {
 
 .layout {
     display: flex;
-    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
 }
 
 /* Sidebar */
@@ -20,6 +26,9 @@ body {
     background-color: #ffffff;
     border-right: 1px solid #dddddd;
     padding: 20px;
+    height: 100vh;
+    overflow-y: auto;
+    flex-shrink: 0;
 }
 
 .logo {
@@ -44,6 +53,10 @@ body {
 /* Conteúdo */
 .content {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
 }
 
 /* Topbar */
@@ -54,6 +67,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
 }
 
 .search-box input {
@@ -81,6 +95,8 @@ body {
 /* Área principal */
 .main-area {
     padding: 25px;
+    flex: 1;
+    overflow-y: auto;
 }
 
 .hero,
@@ -819,14 +835,30 @@ body {
 }
 
 @media (max-width: 600px) {
+    html, body {
+        height: auto;
+        overflow: visible;
+    }
+
     .layout {
         flex-direction: column;
+        height: auto;
+        overflow: visible;
     }
 
     .sidebar {
         width: 100%;
+        height: auto;
         border-right: none;
         border-bottom: 1px solid #dddddd;
+    }
+
+    .content {
+        overflow: visible;
+    }
+
+    .main-area {
+        overflow-y: visible;
     }
 
     .tools-grid,
