@@ -91,6 +91,7 @@
             }
         }
 
+        $_SESSION['flash'] = 'Ferramenta atualizada com sucesso.';
         header('Location: perfil.php');
         exit;
     }

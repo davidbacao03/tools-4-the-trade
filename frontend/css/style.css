@@ -331,6 +331,36 @@ body {
     margin-bottom: 16px;
 }
 
+/* Flatpickr inline calendar overrides */
+#calendarContainer .flatpickr-calendar {
+    box-shadow: none;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 100%;
+    margin-bottom: 16px;
+}
+#calendarContainer .flatpickr-day.flatpickr-disabled,
+#calendarContainer .flatpickr-day.flatpickr-disabled:hover {
+    background: #fdecea;
+    color: #c0392b;
+    border-color: transparent;
+    text-decoration: line-through;
+    opacity: 1;
+}
+#calendarContainer .flatpickr-day.inRange {
+    background: #d6eaf8;
+    border-color: #d6eaf8;
+    box-shadow: -5px 0 0 #d6eaf8, 5px 0 0 #d6eaf8;
+}
+#calendarContainer .flatpickr-day.startRange,
+#calendarContainer .flatpickr-day.endRange {
+    background: #2980b9;
+    border-color: #2980b9;
+}
+#calendarContainer .flatpickr-months {
+    padding: 8px 0 4px;
+}
+
 /* Perfil */
 .profile-header {
     display: flex;

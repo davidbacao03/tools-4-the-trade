@@ -20,6 +20,7 @@ a { text-align:center; color:#333333; }
 <body>
 <div>
 <h2>Login</h2>
+<?php if(isset($_GET['registered'])): ?><p style="color:#27ae60;margin:0;font-size:0.9rem;">Conta criada com sucesso! Podes fazer login.</p><?php endif; ?>
 <?php
 	if(isset($_POST['email'])) {
 		$q = "SELECT * FROM utilizador WHERE utl_email=? AND utl_passe=?";

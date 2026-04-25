@@ -1,5 +1,17 @@
 <?php
-	$bd = new PDO("mysql:host=localhost;dbname=tools4thetrade", "root", "");
+    session_start();
+    $bd = new PDO("mysql:host=localhost;dbname=tools4thetrade", "root", "");
+    $erro = '';
+    if(isset($_POST['nome'])) {
+        try {
+            $bd->prepare("INSERT INTO utilizador (utl_nome, utl_email, utl_passe) VALUES (?,?,?)")
+               ->execute([$_POST['nome'], $_POST['email'], $_POST['passe']]);
+            header('Location: login.php?registered=1'); exit;
+        } catch(PDOException $e) {
+            if($e->getCode() === '23000') $erro = 'Este email já está registado.';
+            else throw $e;
+        }
+    }
 ?>
 <!DOCTYPE html>
 <html>
@@ -14,19 +26,13 @@ h2 { text-align:center; margin:0; }
 input { padding:8px; border:1px solid #cccccc; border-radius:4px; }
 button { padding:10px; background-color:#333333; color:#ffffff; border:none; border-radius:4px; cursor:pointer; }
 a { text-align:center; color:#333333; }
+p.erro { color:#c0392b; margin:0; font-size:0.9rem; }
 </style>
 </head>
 <body>
 <div>
 <h2>Registar</h2>
-<?php
-	if(isset($_POST['nome'])) {
-		$q = "INSERT INTO utilizador (utl_nome, utl_email, utl_passe) VALUES (?,?,?)";
-		$stat = $bd->prepare($q);
-		$num = $stat->execute(array($_POST['nome'], $_POST['email'], $_POST['passe']));
-		if($num == 1) echo "<p>Registo efetuado com sucesso</p>";
-	}
-?>
+<?php if($erro): ?><p class="erro"><?php echo htmlspecialchars($erro); ?></p><?php endif; ?>
 <form action="" method="post">
 <input type="text" name="nome" placeholder="Nome">
 <input type="email" name="email" placeholder="Email">

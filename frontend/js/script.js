@@ -1,12 +1,30 @@
 // Search — live filter of .tool-card elements
 var searchInput = document.querySelector('.search-box input');
 if (searchInput) {
+    var searchEmptyMsg = null;
     searchInput.addEventListener('input', function () {
         var q = this.value.toLowerCase().trim();
+        var anyVisible = false;
         document.querySelectorAll('.tool-card').forEach(function (card) {
-            var text = card.textContent.toLowerCase();
-            card.style.display = (!q || text.includes(q)) ? '' : 'none';
+            var visible = !q || card.textContent.toLowerCase().includes(q);
+            card.style.display = visible ? '' : 'none';
+            if (visible) anyVisible = true;
         });
+        var toolsGrid = document.querySelector('.tools-grid');
+        if (toolsGrid) {
+            if (!anyVisible && q) {
+                if (!searchEmptyMsg) {
+                    searchEmptyMsg = document.createElement('p');
+                    searchEmptyMsg.className = 'empty-msg';
+                    searchEmptyMsg.id = 'searchEmptyMsg';
+                    toolsGrid.appendChild(searchEmptyMsg);
+                }
+                searchEmptyMsg.textContent = 'Nenhuma ferramenta encontrada para "' + q + '".';
+                searchEmptyMsg.style.display = '';
+            } else if (searchEmptyMsg) {
+                searchEmptyMsg.style.display = 'none';
+            }
+        }
     });
 }
 
@@ -75,7 +93,7 @@ if (modalOverlay) {
             var ocupada = btn.dataset.ocupada === '1';
             var alugarLink = document.getElementById('modalAlugarLink');
             var indisponivel = document.getElementById('modalIndisponivel');
-            alugarLink.style.display = ocupada ? 'none' : '';
+            alugarLink.style.display = '';
             indisponivel.style.display = ocupada ? '' : 'none';
             alugarLink.href = 'alugarferramenta.php?id=' + btn.dataset.id;
 

@@ -37,6 +37,9 @@
         header('Location: perfil.php'); exit;
     }
 
+    $flash = $_SESSION['flash'] ?? '';
+    unset($_SESSION['flash']);
+
     $stmt = $bd->prepare("SELECT * FROM utilizador WHERE utl_id = ?");
     $stmt->execute([$uid]);
     $utl = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -113,6 +116,10 @@
 
             <main class="main-area">
 
+                <?php if($flash): ?>
+                <div class="msg-sucesso" style="margin:16px 24px 0;"><?php echo htmlspecialchars($flash); ?></div>
+                <?php endif; ?>
+
                 <section class="form-section">
                     <div class="profile-header">
                         <div class="profile-avatar" id="avatarClick" title="Clica para alterar a foto de perfil">
@@ -163,10 +170,10 @@
                                     <td><?php echo $f['fer_ativa'] ? 'Ativa' : 'Inativa'; ?></td>
                                     <td style="display:flex; gap:8px; align-items:center;">
                                         <a href="editarferramenta.php?id=<?php echo $f['fer_id']; ?>" class="simple-button" style="font-size:0.8rem; padding:6px 12px;">Editar</a>
-                                        <form method="post" style="margin:0;" onsubmit="return confirm('Tens a certeza que queres apagar &quot;<?php echo htmlspecialchars($f['fer_nome'], ENT_QUOTES); ?>&quot;? Esta ação não pode ser desfeita.')">
+                                        <form method="post" style="margin:0;" class="delete-tool-form">
                                             <input type="hidden" name="action" value="delete_tool">
                                             <input type="hidden" name="fer_id" value="<?php echo $f['fer_id']; ?>">
-                                            <button type="submit" class="simple-button" style="background:#c0392b; font-size:0.8rem; padding:6px 12px;">Apagar</button>
+                                            <button type="submit" class="simple-button btn-delete-tool" style="background:#c0392b; font-size:0.8rem; padding:6px 12px;">Apagar</button>
                                         </form>
                                     </td>
                                 </tr>
@@ -265,9 +272,12 @@
             var fd = new FormData();
             fd.append('foto', this.files[0]);
             fetch('uploadfoto.php', { method: 'POST', body: fd })
-                .then(function(r) { return r.json(); })
+                .then(function(r) {
+                    if(!r.ok) throw new Error('upload_failed');
+                    return r.json();
+                })
                 .then(function(data) {
-                    if(!data.path) return;
+                    if(!data.path) throw new Error('no_path');
                     var existing = document.getElementById('avatarImg');
                     var svg = document.getElementById('avatarSvg');
                     if(existing) {
@@ -286,9 +296,32 @@
                         circle.style.backgroundSize  = 'cover';
                         circle.style.backgroundColor = 'transparent';
                     }
+                })
+                .catch(function() {
+                    alert('Erro ao carregar a imagem. Verifica o formato e tenta novamente.');
                 });
         });
     })();
+
+    // Two-click delete confirmation
+    document.querySelectorAll('.delete-tool-form').forEach(function(form) {
+        var btn = form.querySelector('.btn-delete-tool');
+        var confirmed = false;
+        var timer = null;
+        form.addEventListener('submit', function(e) {
+            if(!confirmed) {
+                e.preventDefault();
+                confirmed = true;
+                btn.textContent = 'Tens a certeza?';
+                btn.style.background = '#7b1a1a';
+                timer = setTimeout(function() {
+                    confirmed = false;
+                    btn.textContent = 'Apagar';
+                    btn.style.background = '#c0392b';
+                }, 3000);
+            }
+        });
+    });
     </script>
 </body>
 </html>

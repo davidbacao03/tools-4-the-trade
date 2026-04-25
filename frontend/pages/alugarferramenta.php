@@ -21,9 +21,15 @@
     $f = $stmt->fetch(PDO::FETCH_ASSOC);
     if(!$f) { header('Location: ferramentas.php'); exit; }
 
-    $chk = $bd->prepare("SELECT COUNT(*) FROM aluguer WHERE alu_fer_id = ? AND alu_estado IN ('Reservado','Alugado')");
-    $chk->execute([$id]);
-    $ocupada = $chk->fetchColumn() > 0;
+    $propria = ($f['fer_utl_id'] == $_SESSION['utl_id']);
+
+    $rangesStmt = $bd->prepare(
+        "SELECT alu_inicio, alu_fim FROM aluguer
+         WHERE alu_fer_id = ? AND alu_estado IN ('Reservado','Alugado')
+         ORDER BY alu_inicio"
+    );
+    $rangesStmt->execute([$id]);
+    $datasOcupadas = $rangesStmt->fetchAll(PDO::FETCH_ASSOC);
 
     $imgStmt = $bd->prepare("SELECT img_path FROM ferramenta_imagem WHERE img_fer_id = ? ORDER BY img_principal DESC, img_ordem ASC");
     $imgStmt->execute([$id]);
@@ -32,9 +38,7 @@
     $erro = '';
     $sucesso = false;
 
-    if($ocupada && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        $erro = 'Esta ferramenta já se encontra reservada ou alugada.';
-    } elseif($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if(!$propria && $_SERVER['REQUEST_METHOD'] === 'POST') {
         $inicio = $_POST['inicio'] ?? '';
         $fim    = $_POST['fim']    ?? '';
 
@@ -43,11 +47,19 @@
         } elseif($fim <= $inicio) {
             $erro = 'A data de fim tem de ser posterior à data de início.';
         } else {
-            $ins = "INSERT INTO aluguer (alu_fer_id, alu_utl_id, alu_inicio, alu_fim)
-                    VALUES (?, ?, ?, ?)";
-            $stmt2 = $bd->prepare($ins);
-            $stmt2->execute([$id, $_SESSION['utl_id'], $inicio, $fim]);
-            $sucesso = true;
+            $overlap = $bd->prepare(
+                "SELECT COUNT(*) FROM aluguer
+                 WHERE alu_fer_id = ? AND alu_estado IN ('Reservado','Alugado')
+                 AND alu_inicio <= ? AND alu_fim >= ?"
+            );
+            $overlap->execute([$id, $fim, $inicio]);
+            if($overlap->fetchColumn() > 0) {
+                $erro = 'As datas selecionadas já estão reservadas. Escolhe outras datas.';
+            } else {
+                $bd->prepare("INSERT INTO aluguer (alu_fer_id, alu_utl_id, alu_inicio, alu_fim) VALUES (?, ?, ?, ?)")
+                   ->execute([$id, $_SESSION['utl_id'], $inicio, $fim]);
+                $sucesso = true;
+            }
         }
     }
 
@@ -60,6 +72,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Alugar Ferramenta - Tools 4 The Trade</title>
     <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 </head>
 <body>
     <div class="layout">
@@ -92,9 +105,9 @@
                         <div class="msg-sucesso">
                             Aluguer registado com sucesso! <a href="index.php">Voltar ao início</a>
                         </div>
-                    <?php elseif($ocupada): ?>
+                    <?php elseif($propria): ?>
                         <div class="msg-erro">
-                            Esta ferramenta já se encontra reservada ou alugada. <a href="ferramentas.php">Ver outras ferramentas</a>
+                            Não podes alugar a tua própria ferramenta. <a href="ferramentas.php">Ver outras ferramentas</a>
                         </div>
                     <?php else: ?>
 
@@ -139,14 +152,11 @@
                             </div>
                         </div>
 
-                        <form class="tool-form" method="post" data-preco="<?php echo (float)$f['fer_preco']; ?>">
-                            <label for="inicio">Data de início</label>
-                            <input type="date" id="inicio" name="inicio" min="<?php echo $hoje; ?>"
-                                   value="<?php echo htmlspecialchars($_POST['inicio'] ?? ''); ?>">
-
-                            <label for="fim">Data de fim</label>
-                            <input type="date" id="fim" name="fim" min="<?php echo $hoje; ?>"
-                                   value="<?php echo htmlspecialchars($_POST['fim'] ?? ''); ?>">
+                        <form class="tool-form" method="post">
+                            <label>Seleciona o período de aluguer</label>
+                            <div id="calendarContainer"></div>
+                            <input type="hidden" name="inicio" id="inicio" value="<?php echo htmlspecialchars($_POST['inicio'] ?? ''); ?>">
+                            <input type="hidden" name="fim" id="fim" value="<?php echo htmlspecialchars($_POST['fim'] ?? ''); ?>">
 
                             <div class="price-summary" id="resumoPreco" style="display:none;">
                                 Total estimado: <span id="totalPreco"></span>
@@ -163,5 +173,57 @@
     </div>
 
     <script src="../js/script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+    <script>
+    (function () {
+        var bookedRanges = <?php echo json_encode(array_map(function($d) {
+            return ['from' => $d['alu_inicio'], 'to' => $d['alu_fim']];
+        }, $datasOcupadas)); ?>;
+
+        var precoDia   = <?php echo (float)$f['fer_preco']; ?>;
+        var inicioInp  = document.getElementById('inicio');
+        var fimInp     = document.getElementById('fim');
+        var resumo     = document.getElementById('resumoPreco');
+        var totalEl    = document.getElementById('totalPreco');
+
+        var defaultDates = (inicioInp.value && fimInp.value)
+            ? [inicioInp.value, fimInp.value]
+            : [];
+
+        flatpickr('#calendarContainer', {
+            mode:        'range',
+            inline:      true,
+            minDate:     'today',
+            locale:      'pt',
+            disable:     bookedRanges,
+            dateFormat:  'Y-m-d',
+            defaultDate: defaultDates,
+            onChange: function (selectedDates) {
+                if (selectedDates.length === 2) {
+                    var fmt = function (d) {
+                        return d.getFullYear() + '-' +
+                               String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                               String(d.getDate()).padStart(2, '0');
+                    };
+                    inicioInp.value = fmt(selectedDates[0]);
+                    fimInp.value    = fmt(selectedDates[1]);
+                    var dias = Math.round((selectedDates[1] - selectedDates[0]) / 86400000);
+                    if (dias > 0) {
+                        totalEl.textContent = (dias * precoDia).toFixed(2) + '€ (' +
+                            dias + ' dia' + (dias > 1 ? 's' : '') + ')';
+                        resumo.style.display = 'block';
+                    } else {
+                        resumo.style.display = 'none';
+                    }
+                } else {
+                    inicioInp.value = '';
+                    fimInp.value    = '';
+                    resumo.style.display = 'none';
+                }
+            }
+        });
+    })();
+    </script>
 </body>
 </html>

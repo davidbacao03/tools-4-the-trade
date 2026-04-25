@@ -124,9 +124,8 @@
                                     <p><?php echo number_format($f['fer_preco'], 2); ?>€/dia</p>
                                     <?php if($f['ocupada']): ?>
                                         <span class="badge-indisponivel">Indisponível</span>
-                                    <?php else: ?>
-                                        <a href="alugarferramenta.php?id=<?php echo $f['fer_id']; ?>" class="simple-button">Alugar</a>
                                     <?php endif; ?>
+                                    <a href="alugarferramenta.php?id=<?php echo $f['fer_id']; ?>" class="simple-button">Alugar</a>
                                 </article>
                             <?php endforeach; ?>
                         <?php endif; ?>
