@@ -135,20 +135,52 @@ if (modalOverlay) {
     });
 }
 
+// Opens the tool detail modal — called from map popups and btn-ver-mais buttons
+window.abrirModalFerramenta = function (id) {
+    var f = (window.ferramentasGeo || []).find(function (x) { return x.fer_id == id; });
+    if (!f) return;
+
+    document.getElementById('modalNome').textContent      = f.fer_nome;
+    document.getElementById('modalCategoria').textContent = f.cat_nome;
+    document.getElementById('modalDescricao').textContent = f.fer_descricao || 'Sem descrição disponível.';
+    document.getElementById('modalPreco').textContent     = parseFloat(f.fer_preco).toFixed(2);
+    document.getElementById('modalPrecoBase').textContent = parseFloat(f.fer_preco_base).toFixed(2);
+
+    var alugarLink   = document.getElementById('modalAlugarLink');
+    var indisponivel = document.getElementById('modalIndisponivel');
+    alugarLink.style.display   = '';
+    indisponivel.style.display = f.ocupada == 1 ? '' : 'none';
+    alugarLink.href = 'alugarferramenta.php?id=' + f.fer_id;
+
+    var imagens = f.img_principal ? [f.img_principal] : [];
+    var galeria  = document.getElementById('modalGaleria');
+    var imgMain  = document.getElementById('modalImgMain');
+    var thumbsEl = document.getElementById('modalImgThumbs');
+
+    if (imagens.length > 0) {
+        galeria.style.display = '';
+        imgMain.src = imagens[0];
+        thumbsEl.innerHTML = '';
+    } else {
+        galeria.style.display = 'none';
+    }
+
+    document.getElementById('modalOverlay').classList.add('active');
+};
+
 // Home page map — reads tool data set by index.php via window.ferramentasGeo
 if (typeof L !== 'undefined' && window.ferramentasGeo && document.querySelector('.map-section #mapa')) {
-    var homeMap = L.map('mapa').setView([39.5, -8.0], 7);
+    var homeMap = L.map('mapa').setView([38.72, -9.14], 10);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(homeMap);
     window.ferramentasGeo.forEach(function (f) {
+        var popup = '<b>' + f.fer_nome + '</b><br>' +
+            f.cat_nome + ' · ' + parseFloat(f.fer_preco).toFixed(2) + '€/dia<br>' +
+            '<button class="map-popup-btn" onclick="abrirModalFerramenta(' + f.fer_id + ')">Ver mais</button>';
         L.marker([parseFloat(f.fer_lat), parseFloat(f.fer_lng)])
             .addTo(homeMap)
-            .bindPopup(
-                '<b>' + f.fer_nome + '</b><br>' +
-                'Categoria: ' + f.cat_nome + '<br>' +
-                'Preço: ' + f.fer_preco + '€/dia'
-            );
+            .bindPopup(popup, { minWidth: 180 });
     });
 }
 

@@ -2,7 +2,7 @@
     session_start();
     if(!isset($_SESSION['utl_id'])) header('Location: login.php');
 
-    $bd = new PDO("mysql:host=localhost;dbname=tools4thetrade", "root", "");
+    $bd = new PDO("mysql:host=localhost;dbname=tools4thetrade;charset=utf8mb4", "root", "");
     $uid = $_SESSION['utl_id'];
 
     // Delete tool handler

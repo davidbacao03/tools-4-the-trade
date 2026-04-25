@@ -1,13 +1,14 @@
 <?php
 	session_start();
 	if(!isset($_SESSION['utl_id'])) header('Location: registar.php');
-	$bd = new PDO("mysql:host=localhost;dbname=tools4thetrade", "root", "");
+	$bd = new PDO("mysql:host=localhost;dbname=tools4thetrade;charset=utf8mb4", "root", "");
 	if(!array_key_exists('utl_foto', $_SESSION)) {
 		$fotoQ = $bd->prepare("SELECT utl_foto FROM utilizador WHERE utl_id = ?");
 		$fotoQ->execute([$_SESSION['utl_id']]);
 		$_SESSION['utl_foto'] = $fotoQ->fetchColumn() ?: '';
 	}
 	$userFoto = $_SESSION['utl_foto'];
+	// Top 10 most rented
 	$q = "SELECT f.fer_id, f.fer_nome, f.fer_descricao, f.fer_preco, f.fer_preco_base, f.fer_lat, f.fer_lng, c.cat_nome,
 	             (SELECT COUNT(*) FROM aluguer a WHERE a.alu_fer_id = f.fer_id AND a.alu_estado IN ('Reservado','Alugado')) > 0 AS ocupada,
 	             (SELECT COUNT(*) FROM aluguer a2 WHERE a2.alu_fer_id = f.fer_id) AS total_alugueres
@@ -17,9 +18,8 @@
 	      ORDER BY total_alugueres DESC
 	      LIMIT 10";
 	$ferramentas = $bd->query($q)->fetchAll(PDO::FETCH_ASSOC);
-	$ferramentasComLoc = array_filter($ferramentas, fn($f) => $f['fer_lat'] !== null && $f['fer_lng'] !== null);
 
-	// Fetch all images for the displayed tools
+	// Fetch all images for top 10
 	$imagesByTool = [];
 	if (!empty($ferramentas)) {
 		$ids = array_column($ferramentas, 'fer_id');
@@ -34,6 +34,42 @@
 			$imagesByTool[$img['img_fer_id']][] = $img['img_path'];
 		}
 	}
+
+	// Categories for filter bar
+	$cats = $bd->query("SELECT * FROM categoria ORDER BY cat_nome")->fetchAll(PDO::FETCH_ASSOC);
+
+	// All tools with filters
+	$where  = ["f.fer_ativa = 1"];
+	$params = [];
+	if(!empty($_GET['cat'])) {
+		$where[]  = "f.fer_cat_id = ?";
+		$params[] = (int)$_GET['cat'];
+	}
+	if(isset($_GET['preco_min']) && $_GET['preco_min'] !== '') {
+		$where[]  = "f.fer_preco >= ?";
+		$params[] = (float)$_GET['preco_min'];
+	}
+	if(isset($_GET['preco_max']) && $_GET['preco_max'] !== '') {
+		$where[]  = "f.fer_preco <= ?";
+		$params[] = (float)$_GET['preco_max'];
+	}
+	if(!empty($_GET['disponivel'])) {
+		$where[] = "(SELECT COUNT(*) FROM aluguer a WHERE a.alu_fer_id = f.fer_id AND a.alu_estado IN ('Reservado','Alugado')) = 0";
+	}
+	$whereStr = implode(' AND ', $where);
+	$stmtAll = $bd->prepare(
+		"SELECT f.fer_id, f.fer_nome, f.fer_descricao, f.fer_preco, f.fer_preco_base, f.fer_lat, f.fer_lng, c.cat_nome,
+		        (SELECT COUNT(*) FROM aluguer a WHERE a.alu_fer_id = f.fer_id AND a.alu_estado IN ('Reservado','Alugado')) > 0 AS ocupada,
+		        (SELECT img_path FROM ferramenta_imagem WHERE img_fer_id = f.fer_id AND img_principal = 1 LIMIT 1) AS img_principal
+		 FROM ferramenta f
+		 JOIN categoria c ON f.fer_cat_id = c.cat_id
+		 WHERE $whereStr
+		 ORDER BY f.fer_nome"
+	);
+	$stmtAll->execute($params);
+	$todasFerramentas = $stmtAll->fetchAll(PDO::FETCH_ASSOC);
+
+	$ferramentasComLoc = array_values(array_filter($todasFerramentas, fn($f) => $f['fer_lat'] !== null && $f['fer_lng'] !== null));
 ?>
 
 <!DOCTYPE html>
@@ -119,6 +155,59 @@
                         <?php endif; ?>
                     </div>
                 </section>
+
+                <section class="tools-section">
+                    <h2>Todas as Ferramentas</h2>
+
+                    <form method="get" class="filter-bar">
+                        <select name="cat">
+                            <option value="">Todas as categorias</option>
+                            <?php foreach($cats as $c): ?>
+                                <option value="<?php echo $c['cat_id']; ?>" <?php echo (isset($_GET['cat']) && $_GET['cat'] == $c['cat_id']) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($c['cat_nome']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <input type="number" name="preco_min" placeholder="Preço mín. (€)" step="0.01" min="0"
+                               value="<?php echo htmlspecialchars($_GET['preco_min'] ?? ''); ?>">
+                        <input type="number" name="preco_max" placeholder="Preço máx. (€)" step="0.01" min="0"
+                               value="<?php echo htmlspecialchars($_GET['preco_max'] ?? ''); ?>">
+                        <label class="filter-check">
+                            <input type="checkbox" name="disponivel" value="1" <?php echo !empty($_GET['disponivel']) ? 'checked' : ''; ?>>
+                            Disponíveis
+                        </label>
+                        <button type="submit" class="simple-button">Filtrar</button>
+                        <?php if(!empty(array_filter($_GET))): ?>
+                            <a href="index.php" class="simple-button" style="background:#888;">Limpar</a>
+                        <?php endif; ?>
+                    </form>
+
+                    <div class="tools-grid">
+                        <?php if(empty($todasFerramentas)): ?>
+                            <p class="empty-msg">Nenhuma ferramenta encontrada.</p>
+                        <?php else: ?>
+                            <?php foreach($todasFerramentas as $f): ?>
+                                <article class="tool-card"
+                                    data-lat="<?php echo $f['fer_lat'] !== null ? (float)$f['fer_lat'] : ''; ?>"
+                                    data-lng="<?php echo $f['fer_lng'] !== null ? (float)$f['fer_lng'] : ''; ?>">
+                                    <?php if($f['img_principal']): ?>
+                                        <img src="<?php echo htmlspecialchars($f['img_principal']); ?>" class="tool-card-img" alt="<?php echo htmlspecialchars($f['fer_nome']); ?>">
+                                    <?php else: ?>
+                                        <div class="tool-card-img-placeholder"></div>
+                                    <?php endif; ?>
+                                    <h3><?php echo htmlspecialchars($f['fer_nome']); ?></h3>
+                                    <p>Categoria: <?php echo htmlspecialchars($f['cat_nome']); ?></p>
+                                    <p><?php echo number_format($f['fer_preco'], 2); ?>€/dia</p>
+                                    <?php if($f['ocupada']): ?>
+                                        <span class="badge-indisponivel">Indisponível</span>
+                                    <?php endif; ?>
+                                    <a href="alugarferramenta.php?id=<?php echo $f['fer_id']; ?>" class="simple-button">Alugar</a>
+                                </article>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </section>
+
             </main>
         </div>
     </div>

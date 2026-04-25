@@ -1,6 +1,6 @@
 <?php
     session_start();
-    $bd = new PDO("mysql:host=localhost;dbname=tools4thetrade", "root", "");
+    $bd = new PDO("mysql:host=localhost;dbname=tools4thetrade;charset=utf8mb4", "root", "");
     $erro = '';
     if(isset($_POST['nome'])) {
         try {

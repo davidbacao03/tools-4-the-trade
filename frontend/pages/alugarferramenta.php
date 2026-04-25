@@ -2,7 +2,7 @@
     session_start();
     if(!isset($_SESSION['utl_id'])) header('Location: login.php');
 
-    $bd = new PDO("mysql:host=localhost;dbname=tools4thetrade", "root", "");
+    $bd = new PDO("mysql:host=localhost;dbname=tools4thetrade;charset=utf8mb4", "root", "");
     if(!array_key_exists('utl_foto', $_SESSION)) {
         $fotoQ = $bd->prepare("SELECT utl_foto FROM utilizador WHERE utl_id = ?");
         $fotoQ->execute([$_SESSION['utl_id']]);
@@ -73,6 +73,7 @@
     <title>Alugar Ferramenta - Tools 4 The Trade</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
     <div class="layout">
@@ -150,6 +151,12 @@
                             <div class="info-row">
                                 <span class="info-label">Preço atual:</span><?php echo number_format($f['fer_preco'], 2); ?>€/dia
                             </div>
+                            <?php if($f['fer_lat'] !== null && $f['fer_lng'] !== null): ?>
+                            <div id="mapaFerramenta"
+                                 data-lat="<?php echo (float)$f['fer_lat']; ?>"
+                                 data-lng="<?php echo (float)$f['fer_lng']; ?>"
+                                 style="height:220px; border-radius:6px; margin-top:14px; border:1px solid #ddd;"></div>
+                            <?php endif; ?>
                         </div>
 
                         <form class="tool-form" method="post">
@@ -172,7 +179,21 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="../js/script.js"></script>
+    <script>
+    (function () {
+        var mapDiv = document.getElementById('mapaFerramenta');
+        if (!mapDiv) return;
+        var lat = parseFloat(mapDiv.dataset.lat);
+        var lng = parseFloat(mapDiv.dataset.lng);
+        var map = L.map('mapaFerramenta', { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 14);
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+        L.marker([lat, lng]).addTo(map);
+    })();
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
     <script>
