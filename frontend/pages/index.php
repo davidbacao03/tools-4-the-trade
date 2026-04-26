@@ -8,6 +8,7 @@
 		$_SESSION['utl_foto'] = $fotoQ->fetchColumn() ?: '';
 	}
 	$userFoto = $_SESSION['utl_foto'];
+
 	// Top 10 most rented
 	$q = "SELECT f.fer_id, f.fer_nome, f.fer_descricao, f.fer_preco, f.fer_preco_base, f.fer_lat, f.fer_lng, c.cat_nome,
 	             (SELECT COUNT(*) FROM aluguer a WHERE a.alu_fer_id = f.fer_id AND a.alu_estado IN ('Reservado','Alugado')) > 0 AS ocupada,
@@ -201,7 +202,15 @@
                                     <?php if($f['ocupada']): ?>
                                         <span class="badge-indisponivel">Indisponível</span>
                                     <?php endif; ?>
-                                    <a href="alugarferramenta.php?id=<?php echo $f['fer_id']; ?>" class="simple-button">Alugar</a>
+                                    <button class="btn-ver-mais"
+                                        data-id="<?php echo $f['fer_id']; ?>"
+                                        data-ocupada="<?php echo $f['ocupada'] ? '1' : '0'; ?>"
+                                        data-nome="<?php echo htmlspecialchars($f['fer_nome'], ENT_QUOTES); ?>"
+                                        data-categoria="<?php echo htmlspecialchars($f['cat_nome'], ENT_QUOTES); ?>"
+                                        data-descricao="<?php echo htmlspecialchars($f['fer_descricao'] ?? '', ENT_QUOTES); ?>"
+                                        data-preco="<?php echo number_format($f['fer_preco'], 2); ?>"
+                                        data-preco-base="<?php echo number_format($f['fer_preco_base'], 2); ?>"
+                                        data-imagens="<?php echo htmlspecialchars(json_encode($f['img_principal'] ? [$f['img_principal']] : []), ENT_QUOTES); ?>">Ver mais</button>
                                 </article>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -226,7 +235,7 @@
             <div class="modal-field"><span class="modal-label">Preço atual:</span><span id="modalPreco"></span>€/dia</div>
             <div class="modal-actions">
                 <a href="#" id="modalAlugarLink" class="simple-button">Alugar</a>
-                <span id="modalIndisponivel" class="badge-indisponivel" style="display:none;">Indisponível</span>
+<span id="modalIndisponivel" class="badge-indisponivel" style="display:none;">Indisponível</span>
             </div>
         </div>
     </div>
