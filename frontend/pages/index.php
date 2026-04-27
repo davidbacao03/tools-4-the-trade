@@ -93,6 +93,9 @@
                 <a href="ferramentas.php">Ferramentas</a>
                 <a href="dashboard.php">Dashboard</a>
                 <a href="calendario.php">Calendário</a>
+                <?php if(!empty($_SESSION['utl_admin'])): ?>
+                <a href="admin.php">Admin</a>
+                <?php endif; ?>
             </nav>
         </aside>
 
