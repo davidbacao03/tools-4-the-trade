@@ -118,7 +118,7 @@
                 </section>
 
                 <section class="tools-section">
-                    <h2>Top 10 ferramentas mais alugadas</h2>
+                    <h2>Top 10 ferramentas mais perto</h2>
 
                     <div class="tools-grid">
                         <?php if(empty($ferramentas)): ?>
