@@ -363,6 +363,17 @@ body {
     min-width: 160px;
 }
 
+/* Star rating input (dashboard modal) */
+.star-input { display: flex; gap: 6px; }
+.star-input .star {
+    font-size: 28px;
+    color: #ddd;
+    cursor: pointer;
+    transition: color 0.1s;
+    user-select: none;
+}
+.star-input .star.on { color: #f39c12; }
+
 /* Leaflet map popup button */
 .map-popup-btn {
     display: inline-block;

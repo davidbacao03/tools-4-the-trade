@@ -90,6 +90,6 @@
         </div>
     </div>
 
-    <script src="../js/script.js"></script>
+    <script src="../js/script.js?v=2"></script>
 </body>
 </html>

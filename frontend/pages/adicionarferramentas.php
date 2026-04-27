@@ -136,6 +136,6 @@
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="../js/script.js"></script>
+    <script src="../js/script.js?v=2"></script>
 </body>
 </html>

@@ -258,7 +258,7 @@
         </div>
     </div>
 
-    <script src="../js/script.js"></script>
+    <script src="../js/script.js?v=2"></script>
     <script>
     (function() {
         var avatarClick = document.getElementById('avatarClick');
