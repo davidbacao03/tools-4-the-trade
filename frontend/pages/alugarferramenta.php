@@ -179,72 +179,10 @@
         </div>
     </div>
 
+    <script>window.aluguerData = { bookedRanges: <?php echo json_encode(array_map(function($d) { return ['from' => $d['alu_inicio'], 'to' => $d['alu_fim']]; }, $datasOcupadas)); ?>, precoDia: <?php echo (float)$f['fer_preco']; ?> };</script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="../js/script.js?v=2"></script>
-    <script>
-    (function () {
-        var mapDiv = document.getElementById('mapaFerramenta');
-        if (!mapDiv) return;
-        var lat = parseFloat(mapDiv.dataset.lat);
-        var lng = parseFloat(mapDiv.dataset.lng);
-        var map = L.map('mapaFerramenta', { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 14);
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        }).addTo(map);
-        L.marker([lat, lng]).addTo(map);
-    })();
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
-    <script>
-    (function () {
-        var bookedRanges = <?php echo json_encode(array_map(function($d) {
-            return ['from' => $d['alu_inicio'], 'to' => $d['alu_fim']];
-        }, $datasOcupadas)); ?>;
-
-        var precoDia   = <?php echo (float)$f['fer_preco']; ?>;
-        var inicioInp  = document.getElementById('inicio');
-        var fimInp     = document.getElementById('fim');
-        var resumo     = document.getElementById('resumoPreco');
-        var totalEl    = document.getElementById('totalPreco');
-
-        var defaultDates = (inicioInp.value && fimInp.value)
-            ? [inicioInp.value, fimInp.value]
-            : [];
-
-        flatpickr('#calendarContainer', {
-            mode:        'range',
-            inline:      true,
-            minDate:     'today',
-            locale:      'pt',
-            disable:     bookedRanges,
-            dateFormat:  'Y-m-d',
-            defaultDate: defaultDates,
-            onChange: function (selectedDates) {
-                if (selectedDates.length === 2) {
-                    var fmt = function (d) {
-                        return d.getFullYear() + '-' +
-                               String(d.getMonth() + 1).padStart(2, '0') + '-' +
-                               String(d.getDate()).padStart(2, '0');
-                    };
-                    inicioInp.value = fmt(selectedDates[0]);
-                    fimInp.value    = fmt(selectedDates[1]);
-                    var dias = Math.round((selectedDates[1] - selectedDates[0]) / 86400000);
-                    if (dias > 0) {
-                        totalEl.textContent = (dias * precoDia).toFixed(2) + '€ (' +
-                            dias + ' dia' + (dias > 1 ? 's' : '') + ')';
-                        resumo.style.display = 'block';
-                    } else {
-                        resumo.style.display = 'none';
-                    }
-                } else {
-                    inicioInp.value = '';
-                    fimInp.value    = '';
-                    resumo.style.display = 'none';
-                }
-            }
-        });
-    })();
-    </script>
+    <script src="../js/script.js?v=2"></script>
 </body>
 </html>

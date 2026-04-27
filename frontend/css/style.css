@@ -918,3 +918,65 @@ body {
         width: 100%;
     }
 }
+
+/* --------------------------------------------------------
+   Auth pages (login.php, registar.php) — full-page centered card
+   -------------------------------------------------------- */
+
+body.auth-layout {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f5f5f5;
+}
+
+.auth-layout > div {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 400px;
+    background-color: #ffffff;
+    padding: 30px;
+    border: 1px solid #dddddd;
+    border-radius: 6px;
+}
+
+.auth-layout form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.auth-layout h2 {
+    text-align: center;
+    margin: 0;
+}
+
+.auth-layout input {
+    padding: 8px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+}
+
+.auth-layout button {
+    padding: 10px;
+    background-color: #333333;
+    color: #ffffff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.auth-layout a {
+    text-align: center;
+    color: #333333;
+}
+
+.auth-layout p.erro {
+    color: #c0392b;
+    margin: 0;
+    font-size: 0.9rem;
+}

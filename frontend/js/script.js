@@ -220,32 +220,6 @@ if (typeof L !== 'undefined' && document.querySelector('.form-section #mapa')) {
     });
 }
 
-// Rental date calculator — reads price from data-preco on .tool-form
-var rentalForm = document.querySelector('.tool-form[data-preco]');
-if (rentalForm) {
-    var precoDia = parseFloat(rentalForm.dataset.preco);
-    var inicioInput = document.getElementById('inicio');
-    var fimInput = document.getElementById('fim');
-    var resumo = document.getElementById('resumoPreco');
-    var totalEl = document.getElementById('totalPreco');
-
-    function calcular() {
-        if (!inicioInput.value || !fimInput.value) { resumo.style.display = 'none'; return; }
-        var dias = Math.round((new Date(fimInput.value) - new Date(inicioInput.value)) / 86400000);
-        if (dias <= 0) { resumo.style.display = 'none'; return; }
-        totalEl.textContent = (dias * precoDia).toFixed(2) + '€ (' + dias + ' dia' + (dias > 1 ? 's' : '') + ')';
-        resumo.style.display = 'block';
-    }
-
-    inicioInput.addEventListener('change', function () {
-        if (fimInput.value && fimInput.value <= inicioInput.value) fimInput.value = '';
-        fimInput.min = inicioInput.value;
-        calcular();
-    });
-    fimInput.addEventListener('change', calcular);
-    calcular();
-}
-
 // Custom photo uploader — adicionarferramentas.php
 var fotoDropZone = document.getElementById('fotoDropZone');
 if (fotoDropZone) {
@@ -340,3 +314,195 @@ if (galeriaMain) {
         });
     });
 }
+
+// Rental page map — shows tool pin; div data-lat/lng set in HTML by alugarferramenta.php
+if (typeof L !== 'undefined' && document.getElementById('mapaFerramenta')) {
+    var rentalMapDiv = document.getElementById('mapaFerramenta');
+    var fLat = parseFloat(rentalMapDiv.dataset.lat);
+    var fLng = parseFloat(rentalMapDiv.dataset.lng);
+    var rentalMap = L.map('mapaFerramenta', { zoomControl: true, scrollWheelZoom: false }).setView([fLat, fLng], 14);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(rentalMap);
+    L.marker([fLat, fLng]).addTo(rentalMap);
+}
+
+// Rental page calendar — reads window.aluguerData set by alugarferramenta.php
+if (typeof flatpickr !== 'undefined' && window.aluguerData && document.getElementById('calendarContainer')) {
+    var inicioInp = document.getElementById('inicio');
+    var fimInp    = document.getElementById('fim');
+    var resumo    = document.getElementById('resumoPreco');
+    var totalEl   = document.getElementById('totalPreco');
+    var defaultDates = (inicioInp.value && fimInp.value) ? [inicioInp.value, fimInp.value] : [];
+    flatpickr('#calendarContainer', {
+        mode:        'range',
+        inline:      true,
+        minDate:     'today',
+        locale:      'pt',
+        disable:     window.aluguerData.bookedRanges,
+        dateFormat:  'Y-m-d',
+        defaultDate: defaultDates,
+        onChange: function (selectedDates) {
+            if (selectedDates.length === 2) {
+                var fmt = function (d) {
+                    return d.getFullYear() + '-' +
+                           String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                           String(d.getDate()).padStart(2, '0');
+                };
+                inicioInp.value = fmt(selectedDates[0]);
+                fimInp.value    = fmt(selectedDates[1]);
+                var dias = Math.round((selectedDates[1] - selectedDates[0]) / 86400000);
+                if (dias > 0) {
+                    totalEl.textContent = (dias * window.aluguerData.precoDia).toFixed(2) + '€ (' +
+                        dias + ' dia' + (dias > 1 ? 's' : '') + ')';
+                    resumo.style.display = 'block';
+                } else {
+                    resumo.style.display = 'none';
+                }
+            } else {
+                inicioInp.value = '';
+                fimInp.value    = '';
+                resumo.style.display = 'none';
+            }
+        }
+    });
+}
+
+// Edit tool page — existing photos management; reads window.existingPhotos set by editarferramenta.php
+if (window.existingPhotos) {
+    (function () {
+        var existingPhotos = window.existingPhotos;
+        var grid         = document.getElementById('fotoExistingGrid');
+        var deleteCont   = document.getElementById('deleteImgsContainer');
+        var principalInp = document.getElementById('imgPrincipalId');
+
+        if (!grid) return;
+
+        var deletedIds = [];
+
+        function renderExisting() {
+            grid.innerHTML = '';
+            deleteCont.innerHTML = '';
+
+            deletedIds.forEach(function (did) {
+                var inp = document.createElement('input');
+                inp.type  = 'hidden';
+                inp.name  = 'delete_imgs[]';
+                inp.value = did;
+                deleteCont.appendChild(inp);
+            });
+
+            var p = existingPhotos.find(function (x) { return x.principal; });
+            principalInp.value = p ? p.id : '';
+
+            existingPhotos.forEach(function (photo, idx) {
+                var item = document.createElement('div');
+                item.className = 'foto-preview-item' + (photo.principal ? ' principal' : '');
+
+                var img = document.createElement('img');
+                img.src = photo.path;
+                img.alt = '';
+                item.appendChild(img);
+
+                if (photo.principal) {
+                    var badge = document.createElement('div');
+                    badge.className = 'foto-badge-principal';
+                    badge.textContent = 'Principal';
+                    item.appendChild(badge);
+                } else {
+                    var overlay = document.createElement('div');
+                    overlay.className = 'foto-overlay-principal';
+                    overlay.textContent = 'Tornar principal';
+                    (function (i) {
+                        overlay.addEventListener('click', function () {
+                            existingPhotos.forEach(function (p) { p.principal = false; });
+                            existingPhotos[i].principal = true;
+                            renderExisting();
+                        });
+                    })(idx);
+                    item.appendChild(overlay);
+                }
+
+                var btnX = document.createElement('button');
+                btnX.type = 'button';
+                btnX.className = 'foto-btn-remove';
+                btnX.textContent = '×';
+                (function (i, ph) {
+                    btnX.addEventListener('click', function () {
+                        deletedIds.push(ph.id);
+                        existingPhotos.splice(i, 1);
+                        if (existingPhotos.length > 0 && !existingPhotos.some(function (p) { return p.principal; })) {
+                            existingPhotos[0].principal = true;
+                        }
+                        renderExisting();
+                    });
+                })(idx, photo);
+                item.appendChild(btnX);
+
+                grid.appendChild(item);
+            });
+        }
+
+        renderExisting();
+    })();
+}
+
+// Profile page — avatar upload
+var avatarClick = document.getElementById('avatarClick');
+if (avatarClick) {
+    var avatarInput = document.getElementById('avatarInput');
+    avatarClick.addEventListener('click', function () { avatarInput.click(); });
+    avatarInput.addEventListener('change', function () {
+        if (!this.files[0]) return;
+        var fd = new FormData();
+        fd.append('foto', this.files[0]);
+        fetch('uploadfoto.php', { method: 'POST', body: fd })
+            .then(function (r) {
+                if (!r.ok) throw new Error('upload_failed');
+                return r.json();
+            })
+            .then(function (data) {
+                if (!data.path) throw new Error('no_path');
+                var existing = document.getElementById('avatarImg');
+                var svg = document.getElementById('avatarSvg');
+                if (existing) {
+                    existing.src = data.path + '?t=' + Date.now();
+                } else {
+                    if (svg) svg.remove();
+                    var img = document.createElement('img');
+                    img.id = 'avatarImg';
+                    img.alt = 'Foto de perfil';
+                    img.src = data.path;
+                    avatarClick.insertBefore(img, avatarClick.firstChild);
+                }
+                var circle = document.querySelector('.profile-circle');
+                if (circle) {
+                    circle.style.backgroundImage = 'url(' + data.path + '?t=' + Date.now() + ')';
+                    circle.style.backgroundSize  = 'cover';
+                    circle.style.backgroundColor = 'transparent';
+                }
+            })
+            .catch(function () {
+                alert('Erro ao carregar a imagem. Verifica o formato e tenta novamente.');
+            });
+    });
+}
+
+// Profile page — two-click delete confirmation
+document.querySelectorAll('.delete-tool-form').forEach(function (form) {
+    var btn = form.querySelector('.btn-delete-tool');
+    var confirmed = false;
+    form.addEventListener('submit', function (e) {
+        if (!confirmed) {
+            e.preventDefault();
+            confirmed = true;
+            btn.textContent = 'Tens a certeza?';
+            btn.style.background = '#7b1a1a';
+            setTimeout(function () {
+                confirmed = false;
+                btn.textContent = 'Apagar';
+                btn.style.background = '#c0392b';
+            }, 3000);
+        }
+    });
+});
