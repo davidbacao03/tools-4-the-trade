@@ -139,7 +139,7 @@
                         <div class="profile-meta">
                             <span><?php echo htmlspecialchars($utl['utl_email']); ?></span>
                             <?php if($utl['utl_admin']): ?>
-                                <span style="color:#333;font-weight:600;">Admin</span>
+                                <a href="admin.php" style="color:#333;font-weight:600;text-decoration:none;">Admin</a>
                             <?php endif; ?>
                             <span>Membro desde <?php echo date('M Y', strtotime($utl['utl_criado'])); ?></span>
                         </div>
