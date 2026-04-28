@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS `ferramenta_imagem` (
 
 -- Rental records. aluguer rows must be deleted before deleting a ferramenta
 -- (perfil.php handles this manually before calling DELETE FROM ferramenta).
+-- avaliacao rows are cascade-deleted when their aluguer row is deleted.
 CREATE TABLE IF NOT EXISTS `aluguer` (
   `alu_id`        int(11)  NOT NULL AUTO_INCREMENT,
   `alu_fer_id`    int(11)  DEFAULT NULL,
@@ -94,4 +95,30 @@ CREATE TABLE IF NOT EXISTS `aluguer` (
   KEY `alu_utl_id` (`alu_utl_id`),
   CONSTRAINT `aluguer_ibfk_1` FOREIGN KEY (`alu_fer_id`) REFERENCES `ferramenta` (`fer_id`),
   CONSTRAINT `aluguer_ibfk_2` FOREIGN KEY (`alu_utl_id`) REFERENCES `utilizador` (`utl_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+-- One rating per rental (UNIQUE on ava_alu_id). Cascade-deleted with aluguer.
+-- ava_nota_fer = tool rating, ava_nota_dono = owner rating (both 0.5–5.0).
+-- ava_texto = optional written review of the tool only.
+CREATE TABLE IF NOT EXISTS `avaliacao` (
+  `ava_id`       int(11)      NOT NULL AUTO_INCREMENT,
+  `ava_alu_id`   int(11)      NOT NULL,
+  `ava_fer_id`   int(11)      NOT NULL,
+  `ava_utl_id`   int(11)      NOT NULL,
+  `ava_dono_id`  int(11)      NOT NULL,
+  `ava_nota_fer` decimal(2,1) NOT NULL,
+  `ava_nota_dono` decimal(2,1) NOT NULL,
+  `ava_texto`    text         DEFAULT NULL,
+  `ava_criada`   datetime     DEFAULT current_timestamp(),
+  PRIMARY KEY (`ava_id`),
+  UNIQUE KEY `ava_alu_id` (`ava_alu_id`),
+  KEY `ava_fer_id` (`ava_fer_id`),
+  KEY `ava_utl_id` (`ava_utl_id`),
+  KEY `ava_dono_id` (`ava_dono_id`),
+  CONSTRAINT `avaliacao_ibfk_1` FOREIGN KEY (`ava_alu_id`)  REFERENCES `aluguer`    (`alu_id`) ON DELETE CASCADE,
+  CONSTRAINT `avaliacao_ibfk_2` FOREIGN KEY (`ava_fer_id`)  REFERENCES `ferramenta` (`fer_id`),
+  CONSTRAINT `avaliacao_ibfk_3` FOREIGN KEY (`ava_utl_id`)  REFERENCES `utilizador` (`utl_id`),
+  CONSTRAINT `avaliacao_ibfk_4` FOREIGN KEY (`ava_dono_id`) REFERENCES `utilizador` (`utl_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

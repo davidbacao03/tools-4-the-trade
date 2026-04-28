@@ -920,6 +920,67 @@ body {
 }
 
 /* --------------------------------------------------------
+   Star rating
+   -------------------------------------------------------- */
+
+.star-picker {
+    display: inline-flex;
+    font-size: 1.5rem;
+    gap: 1px;
+    cursor: pointer;
+    line-height: 1;
+    user-select: none;
+}
+
+.sp-star { color: #ddd; }
+
+.sp-star.full { color: #f39c12; }
+
+.sp-star.half {
+    background: linear-gradient(to right, #f39c12 50%, #ddd 50%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stars-display {
+    font-size: 1.3rem;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.rating-form {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 130px;
+}
+
+.rating-form .simple-button {
+    font-size: 0.75rem;
+    padding: 3px 10px;
+    align-self: flex-start;
+    margin-top: 2px;
+}
+
+.review-details summary {
+    font-size: 0.8rem;
+    cursor: pointer;
+    color: #666;
+}
+
+.review-details textarea {
+    width: 100%;
+    font-size: 0.8rem;
+    margin-top: 4px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 4px;
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+/* --------------------------------------------------------
    Auth pages (login.php, registar.php) — full-page centered card
    -------------------------------------------------------- */
 

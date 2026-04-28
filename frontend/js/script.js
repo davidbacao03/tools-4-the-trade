@@ -488,6 +488,86 @@ if (avatarClick) {
     });
 }
 
+// Star rating — interactive picker
+// Uses input.value as source of truth so pickers can be reset externally (e.g. modal reopen).
+document.querySelectorAll('.star-picker').forEach(function (picker) {
+    var stars = Array.from(picker.querySelectorAll('.sp-star'));
+    var input = picker.querySelector('input[type="hidden"]');
+
+    function setStars(val) {
+        stars.forEach(function (s, i) {
+            s.className = 'sp-star';
+            if (val >= i + 1)        s.classList.add('full');
+            else if (val >= i + 0.5) s.classList.add('half');
+        });
+    }
+
+    stars.forEach(function (star, i) {
+        star.addEventListener('mousemove', function (e) {
+            var rect = star.getBoundingClientRect();
+            setStars(e.clientX < rect.left + rect.width / 2 ? i + 0.5 : i + 1);
+        });
+        star.addEventListener('click', function (e) {
+            var rect = star.getBoundingClientRect();
+            input.value = e.clientX < rect.left + rect.width / 2 ? i + 0.5 : i + 1;
+            setStars(parseFloat(input.value));
+        });
+    });
+
+    picker.addEventListener('mouseleave', function () { setStars(parseFloat(input.value) || 0); });
+
+    var form = picker.closest('form');
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            if (!parseFloat(input.value)) {
+                e.preventDefault();
+                picker.style.outline = '2px solid #c0392b';
+                picker.style.borderRadius = '2px';
+                setTimeout(function () { picker.style.outline = ''; }, 900);
+            }
+        });
+    }
+});
+
+// Star rating — read-only display
+document.querySelectorAll('.stars-display').forEach(function (el) {
+    var nota = parseFloat(el.dataset.nota);
+    var html = '';
+    for (var i = 1; i <= 5; i++) {
+        if (nota >= i)
+            html += '<span style="color:#f39c12;">★</span>';
+        else if (nota >= i - 0.5)
+            html += '<span style="background:linear-gradient(to right,#f39c12 50%,#ddd 50%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">★</span>';
+        else
+            html += '<span style="color:#ddd;">★</span>';
+    }
+    el.innerHTML = html;
+});
+
+// Rating modal — opens from .btn-avaliar buttons in dashboard history table
+var ratingModalOverlay = document.getElementById('ratingModalOverlay');
+if (ratingModalOverlay) {
+    document.querySelectorAll('.btn-avaliar').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.getElementById('ratingAluId').value = btn.dataset.aluId;
+            ratingModalOverlay.querySelectorAll('.star-picker').forEach(function (picker) {
+                picker.querySelector('input[type="hidden"]').value = '';
+                picker.querySelectorAll('.sp-star').forEach(function (s) { s.className = 'sp-star'; });
+            });
+            var ta = ratingModalOverlay.querySelector('textarea');
+            if (ta) ta.value = '';
+            ratingModalOverlay.classList.add('active');
+        });
+    });
+
+    document.getElementById('ratingModalClose').addEventListener('click', function () {
+        ratingModalOverlay.classList.remove('active');
+    });
+    ratingModalOverlay.addEventListener('click', function (e) {
+        if (e.target === ratingModalOverlay) ratingModalOverlay.classList.remove('active');
+    });
+}
+
 // Profile page — two-click delete confirmation
 document.querySelectorAll('.delete-tool-form').forEach(function (form) {
     var btn = form.querySelector('.btn-delete-tool');

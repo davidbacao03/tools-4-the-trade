@@ -11,6 +11,31 @@
     }
     $userFoto = $_SESSION['utl_foto'];
 
+    // Rating submission
+    if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'avaliar') {
+        $aluId    = (int)($_POST['alu_id'] ?? 0);
+        $notaFer  = round((float)($_POST['nota_fer']  ?? 0) * 2) / 2;
+        $notaDono = round((float)($_POST['nota_dono'] ?? 0) * 2) / 2;
+        $texto    = trim($_POST['texto'] ?? '');
+        if ($aluId > 0 && $notaFer >= 0.5 && $notaFer <= 5.0 && $notaDono >= 0.5 && $notaDono <= 5.0) {
+            $check = $bd->prepare(
+                "SELECT a.alu_fer_id, f.fer_utl_id FROM aluguer a
+                 JOIN ferramenta f ON a.alu_fer_id = f.fer_id
+                 WHERE a.alu_id = ? AND a.alu_utl_id = ? AND a.alu_estado = 'Devolvido'"
+            );
+            $check->execute([$aluId, $uid]);
+            $rental = $check->fetch(PDO::FETCH_ASSOC);
+            if ($rental) {
+                $bd->prepare(
+                    "INSERT IGNORE INTO avaliacao (ava_alu_id, ava_fer_id, ava_utl_id, ava_dono_id, ava_nota_fer, ava_nota_dono, ava_texto)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)"
+                )->execute([$aluId, $rental['alu_fer_id'], $uid, $rental['fer_utl_id'], $notaFer, $notaDono, $texto ?: null]);
+            }
+        }
+        header('Location: dashboard.php');
+        exit;
+    }
+
     // Overview counts
     $totalMinhas = $bd->prepare("SELECT COUNT(*) FROM ferramenta WHERE fer_utl_id = ? AND fer_ativa = 1");
     $totalMinhas->execute([$uid]);
@@ -75,12 +100,14 @@
 
     // My rental history
     $hist = $bd->prepare(
-        "SELECT a.alu_inicio, a.alu_fim, a.alu_devolvido, a.alu_estado,
+        "SELECT a.alu_id, a.alu_fer_id, a.alu_inicio, a.alu_fim, a.alu_devolvido, a.alu_estado,
                 f.fer_nome, c.cat_nome,
-                DATEDIFF(COALESCE(DATE(a.alu_devolvido), a.alu_fim), a.alu_inicio) AS dias
+                DATEDIFF(COALESCE(DATE(a.alu_devolvido), a.alu_fim), a.alu_inicio) AS dias,
+                av.ava_id, av.ava_nota_fer, av.ava_nota_dono
          FROM aluguer a
          JOIN ferramenta f ON a.alu_fer_id = f.fer_id
          JOIN categoria c ON f.fer_cat_id = c.cat_id
+         LEFT JOIN avaliacao av ON av.ava_alu_id = a.alu_id
          WHERE a.alu_utl_id = ?
          ORDER BY a.alu_criado DESC"
     );
@@ -248,6 +275,7 @@
                                     <th>Devolvido em</th>
                                     <th>Duração real</th>
                                     <th>Estado</th>
+                                    <th>Avaliação</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -260,6 +288,20 @@
                                     <td><?php echo $h['alu_devolvido'] ? date('d/m/Y H:i', strtotime($h['alu_devolvido'])) : '—'; ?></td>
                                     <td><?php echo $h['dias']; ?> dia<?php echo $h['dias'] != 1 ? 's' : ''; ?></td>
                                     <td><span class="estado-badge estado-<?php echo $h['alu_estado']; ?>"><?php echo $h['alu_estado']; ?></span></td>
+                                    <td>
+                                        <?php if($h['alu_estado'] === 'Devolvido'): ?>
+                                            <?php if($h['ava_id']): ?>
+                                                <div style="font-size:0.75rem;color:#888;margin-bottom:2px;">Ferramenta</div>
+                                                <div class="stars-display" data-nota="<?php echo $h['ava_nota_fer']; ?>"></div>
+                                                <div style="font-size:0.75rem;color:#888;margin:4px 0 2px;">Proprietário</div>
+                                                <div class="stars-display" data-nota="<?php echo $h['ava_nota_dono']; ?>"></div>
+                                            <?php else: ?>
+                                                <button class="simple-button btn-avaliar" data-alu-id="<?php echo $h['alu_id']; ?>" style="font-size:0.8rem;padding:5px 12px;">Avaliar</button>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <span style="color:#aaa;">—</span>
+                                        <?php endif; ?>
+                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -271,6 +313,50 @@
         </div>
     </div>
 
-    <script src="../js/script.js?v=2"></script>
+    <div class="modal-overlay" id="ratingModalOverlay">
+        <div class="modal-box">
+            <button class="modal-close" id="ratingModalClose">&times;</button>
+            <h2>Avaliar experiência</h2>
+            <form method="post" id="ratingForm">
+                <input type="hidden" name="action" value="avaliar">
+                <input type="hidden" name="alu_id" id="ratingAluId" value="">
+
+                <div class="modal-field">
+                    <span class="modal-label">Ferramenta</span>
+                    <div class="star-picker">
+                        <span class="sp-star">★</span>
+                        <span class="sp-star">★</span>
+                        <span class="sp-star">★</span>
+                        <span class="sp-star">★</span>
+                        <span class="sp-star">★</span>
+                        <input type="hidden" name="nota_fer" value="">
+                    </div>
+                </div>
+
+                <div class="modal-field">
+                    <span class="modal-label">Proprietário</span>
+                    <div class="star-picker">
+                        <span class="sp-star">★</span>
+                        <span class="sp-star">★</span>
+                        <span class="sp-star">★</span>
+                        <span class="sp-star">★</span>
+                        <span class="sp-star">★</span>
+                        <input type="hidden" name="nota_dono" value="">
+                    </div>
+                </div>
+
+                <div class="modal-field" style="flex-direction:column;align-items:flex-start;gap:6px;">
+                    <span class="modal-label">Review da ferramenta <span style="font-weight:normal;color:#999;">(opcional)</span></span>
+                    <textarea name="texto" rows="3" placeholder="Descreve a tua experiência com a ferramenta..." style="width:100%;border:1px solid #ddd;border-radius:4px;padding:8px;font-size:0.9rem;resize:vertical;box-sizing:border-box;font-family:inherit;"></textarea>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="submit" class="simple-button">Enviar avaliação</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../js/script.js?v=3"></script>
 </body>
 </html>

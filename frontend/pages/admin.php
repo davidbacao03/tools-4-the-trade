@@ -107,7 +107,6 @@
                 <a href="Ferramentas.php">Ferramentas</a>
                 <a href="dashboard.php">Dashboard</a>
                 <a href="calendario.php">Calendário</a>
-                <a href="admin.php">Admin</a>
             </nav>
         </aside>
 
