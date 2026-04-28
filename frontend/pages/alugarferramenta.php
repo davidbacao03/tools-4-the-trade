@@ -13,8 +13,11 @@
     $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
     if($id === 0) { header('Location: ferramentas.php'); exit; }
 
-    $q = "SELECT f.*, c.cat_nome FROM ferramenta f
+    $q = "SELECT f.*, c.cat_nome, u.utl_nome AS dono_nome, u.utl_foto AS dono_foto,
+                 ROUND((SELECT AVG(av.ava_nota_dono) FROM avaliacao av WHERE av.ava_dono_id = f.fer_utl_id), 1) AS avg_nota_dono
+          FROM ferramenta f
           JOIN categoria c ON f.fer_cat_id = c.cat_id
+          JOIN utilizador u ON f.fer_utl_id = u.utl_id
           WHERE f.fer_id = ? AND f.fer_ativa = 1";
     $stmt = $bd->prepare($q);
     $stmt->execute([$id]);
@@ -158,6 +161,22 @@
                             <div class="info-row">
                                 <span class="info-label">Preço:</span><?php echo number_format($f['fer_preco_base'], 2); ?>€/dia
                             </div>
+                            <?php if(!empty($f['dono_nome'])): ?>
+                            <div class="dono-card">
+                                <?php if(!empty($f['dono_foto'])): ?>
+                                <div class="dono-avatar" style="background-image:url('<?php echo htmlspecialchars($f['dono_foto']); ?>')"></div>
+                                <?php else: ?>
+                                <div class="dono-avatar dono-avatar-empty"></div>
+                                <?php endif; ?>
+                                <div class="dono-info">
+                                    <span class="dono-nome"><?php echo htmlspecialchars($f['dono_nome']); ?></span>
+                                    <?php if($f['avg_nota_dono']): ?>
+                                    <span class="dono-stars"><span class="stars-display" data-nota="<?php echo $f['avg_nota_dono']; ?>"></span> <small><?php echo $f['avg_nota_dono']; ?></small></span>
+                                    <?php endif; ?>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+
                             <?php if($f['fer_lat'] !== null && $f['fer_lng'] !== null): ?>
                             <div id="mapaFerramenta"
                                  data-lat="<?php echo (float)$f['fer_lat']; ?>"

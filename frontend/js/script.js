@@ -163,6 +163,24 @@ if (modalOverlay) {
                 }
             }
 
+            // Owner card
+            var donoCard = document.getElementById('modalDonoCard');
+            if (donoCard) {
+                var donoNome = btn.dataset.donoNome;
+                if (donoNome) {
+                    document.getElementById('modalDonoNome').textContent = donoNome;
+                    var donoAvatar = document.getElementById('modalDonoAvatar');
+                    var donoFoto = btn.dataset.donoFoto;
+                    donoAvatar.style.backgroundImage = donoFoto ? "url('" + donoFoto + "')" : '';
+                    donoAvatar.classList.toggle('dono-avatar-empty', !donoFoto);
+                    var avgNotaDono = parseFloat(btn.dataset.avgNotaDono);
+                    document.getElementById('modalDonoStars').innerHTML = !isNaN(avgNotaDono) ? renderStarsHtml(avgNotaDono) + ' <small>' + avgNotaDono.toFixed(1) + '</small>' : '';
+                    donoCard.style.display = '';
+                } else {
+                    donoCard.style.display = 'none';
+                }
+            }
+
             modalOverlay.classList.add('active');
         });
     });
@@ -228,6 +246,22 @@ window.abrirModalFerramenta = function (id) {
             descontoRow.style.display = '';
         } else {
             descontoRow.style.display = 'none';
+        }
+    }
+
+    // Owner card
+    var donoCard = document.getElementById('modalDonoCard');
+    if (donoCard) {
+        if (f.dono_nome) {
+            document.getElementById('modalDonoNome').textContent = f.dono_nome;
+            var donoAvatar = document.getElementById('modalDonoAvatar');
+            donoAvatar.style.backgroundImage = f.dono_foto ? "url('" + f.dono_foto + "')" : '';
+            donoAvatar.classList.toggle('dono-avatar-empty', !f.dono_foto);
+            var avgNotaDono = parseFloat(f.avg_nota_dono);
+            document.getElementById('modalDonoStars').innerHTML = !isNaN(avgNotaDono) ? renderStarsHtml(avgNotaDono) + ' <small>' + avgNotaDono.toFixed(1) + '</small>' : '';
+            donoCard.style.display = '';
+        } else {
+            donoCard.style.display = 'none';
         }
     }
 
