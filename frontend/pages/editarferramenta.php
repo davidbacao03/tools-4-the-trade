@@ -33,8 +33,11 @@
 
     if($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Update basic info
+        $descontoDias  = !empty($_POST['desconto_dias'])  ? (int)$_POST['desconto_dias']    : null;
+        $precoDesconto = !empty($_POST['desconto_preco']) ? (float)$_POST['desconto_preco'] : null;
         $upd = $bd->prepare(
-            "UPDATE ferramenta SET fer_cat_id=?, fer_nome=?, fer_descricao=?, fer_preco_base=?, fer_preco=?, fer_lat=?, fer_lng=?
+            "UPDATE ferramenta SET fer_cat_id=?, fer_nome=?, fer_descricao=?, fer_preco_base=?, fer_preco=?,
+             fer_desconto_dias=?, fer_preco_desconto=?, fer_lat=?, fer_lng=?
              WHERE fer_id=? AND fer_utl_id=?"
         );
         $upd->execute([
@@ -42,7 +45,9 @@
             $_POST['nome'],
             $_POST['descricao'],
             $_POST['preco_base'],
-            $_POST['preco'],
+            $_POST['preco_base'],
+            $descontoDias,
+            $precoDesconto,
             $_POST['lat'] ?: null,
             $_POST['lng'] ?: null,
             $id, $uid
@@ -149,11 +154,19 @@
                         <label for="descricao">Descrição</label>
                         <textarea id="descricao" name="descricao"><?php echo htmlspecialchars($f['fer_descricao'] ?? ''); ?></textarea>
 
-                        <label for="preco_base">Preço base (€/dia)</label>
+                        <label for="preco_base">Preço (€/dia)</label>
                         <input type="number" id="preco_base" name="preco_base" step="0.01" value="<?php echo $f['fer_preco_base']; ?>">
 
-                        <label for="preco">Preço atual (€/dia)</label>
-                        <input type="number" id="preco" name="preco" step="0.01" value="<?php echo $f['fer_preco']; ?>">
+                        <label>Desconto por aluguer prolongado <span class="label-opt">(opcional)</span></label>
+                        <div class="discount-row">
+                            <span>A partir de</span>
+                            <input type="number" id="desconto_dias" name="desconto_dias" min="2" placeholder="Nº dias"
+                                   value="<?php echo $f['fer_desconto_dias'] ?? ''; ?>">
+                            <span>dias, preço de</span>
+                            <input type="number" id="desconto_preco" name="desconto_preco" step="0.01" min="0" placeholder="€/dia"
+                                   value="<?php echo $f['fer_preco_desconto'] ?? ''; ?>">
+                            <span>€/dia</span>
+                        </div>
 
                         <!-- Existing photos -->
                         <?php if(!empty($imagens)): ?>

@@ -1041,3 +1041,63 @@ body.auth-layout {
     margin: 0;
     font-size: 0.9rem;
 }
+
+/* --------------------------------------------------------
+   Tool form — discount row and optional label
+   -------------------------------------------------------- */
+
+.discount-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.discount-row input {
+    width: 90px;
+}
+
+.label-opt {
+    font-size: 0.8rem;
+    color: #999;
+    font-weight: normal;
+}
+
+/* Rental page — discount hint above calendar */
+.discount-hint {
+    font-size: 0.85rem;
+    color: #555;
+    margin: 0 0 8px;
+}
+
+/* --------------------------------------------------------
+   Alugar page — written reviews list
+   -------------------------------------------------------- */
+
+.review-item {
+    border-top: 1px solid #eee;
+    padding: 12px 0;
+}
+
+.review-item:first-child { border-top: none; }
+
+.review-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+
+.review-date {
+    font-size: 0.78rem;
+    color: #aaa;
+    margin-left: auto;
+}
+
+.review-text {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #444;
+    line-height: 1.5;
+}

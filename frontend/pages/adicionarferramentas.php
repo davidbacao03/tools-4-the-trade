@@ -10,7 +10,9 @@
 	$userFoto = $_SESSION['utl_foto'];
 
 	if(isset($_POST['nome'])) {
-		$q = "INSERT INTO ferramenta (fer_utl_id, fer_cat_id, fer_nome, fer_descricao, fer_preco_base, fer_preco, fer_lat, fer_lng) VALUES (?,?,?,?,?,?,?,?)";
+		$descontoDias  = !empty($_POST['desconto_dias'])  ? (int)$_POST['desconto_dias']    : null;
+		$precoDesconto = !empty($_POST['desconto_preco']) ? (float)$_POST['desconto_preco'] : null;
+		$q = "INSERT INTO ferramenta (fer_utl_id, fer_cat_id, fer_nome, fer_descricao, fer_preco_base, fer_preco, fer_desconto_dias, fer_preco_desconto, fer_lat, fer_lng) VALUES (?,?,?,?,?,?,?,?,?,?)";
 		$stat = $bd->prepare($q);
 		$stat->execute([
 			$_SESSION['utl_id'],
@@ -18,7 +20,9 @@
 			$_POST['nome'],
 			$_POST['descricao'],
 			$_POST['preco_base'],
-			$_POST['preco'],
+			$_POST['preco_base'],
+			$descontoDias,
+			$precoDesconto,
 			$_POST['lat'] ?: null,
 			$_POST['lng'] ?: null
 		]);
@@ -99,11 +103,17 @@
                         <label for="descricao">Descrição</label>
                         <textarea id="descricao" name="descricao"></textarea>
 
-                        <label for="preco_base">Preço base (€/dia)</label>
+                        <label for="preco_base">Preço (€/dia)</label>
                         <input type="number" id="preco_base" name="preco_base" step="0.01">
 
-                        <label for="preco">Preço atual (€/dia)</label>
-                        <input type="number" id="preco" name="preco" step="0.01">
+                        <label>Desconto por aluguer prolongado <span class="label-opt">(opcional)</span></label>
+                        <div class="discount-row">
+                            <span>A partir de</span>
+                            <input type="number" id="desconto_dias" name="desconto_dias" min="2" placeholder="Nº dias">
+                            <span>dias, preço de</span>
+                            <input type="number" id="desconto_preco" name="desconto_preco" step="0.01" min="0" placeholder="€/dia">
+                            <span>€/dia</span>
+                        </div>
 
                         <label>Fotos da ferramenta</label>
                         <div class="foto-drop-zone" id="fotoDropZone">

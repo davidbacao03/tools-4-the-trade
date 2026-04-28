@@ -79,6 +79,20 @@ if (grid && navigator.geolocation) {
     );
 }
 
+// Star rating — render star HTML from a decimal value (shared helper)
+function renderStarsHtml(nota) {
+    var html = '';
+    for (var i = 1; i <= 5; i++) {
+        if (nota >= i)
+            html += '<span style="color:#f39c12;">★</span>';
+        else if (nota >= i - 0.5)
+            html += '<span style="background:linear-gradient(to right,#f39c12 50%,#ddd 50%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">★</span>';
+        else
+            html += '<span style="color:#ddd;">★</span>';
+    }
+    return html;
+}
+
 // Modal — index.php tool detail popup with image gallery
 var modalOverlay = document.getElementById('modalOverlay');
 if (modalOverlay) {
@@ -87,7 +101,6 @@ if (modalOverlay) {
             document.getElementById('modalNome').textContent = btn.dataset.nome;
             document.getElementById('modalCategoria').textContent = btn.dataset.categoria;
             document.getElementById('modalDescricao').textContent = btn.dataset.descricao || 'Sem descrição disponível.';
-            document.getElementById('modalPreco').textContent = btn.dataset.preco;
             document.getElementById('modalPrecoBase').textContent = btn.dataset.precoBase;
 
             var ocupada = btn.dataset.ocupada === '1';
@@ -123,6 +136,33 @@ if (modalOverlay) {
                 galeria.style.display = 'none';
             }
 
+            // Rating row
+            var avgNota = parseFloat(btn.dataset.avgNota);
+            var totalAvaliacoes = parseInt(btn.dataset.totalAvaliacoes) || 0;
+            var ratingRow = document.getElementById('modalRatingRow');
+            if (ratingRow) {
+                if (!isNaN(avgNota) && totalAvaliacoes > 0) {
+                    document.getElementById('modalRatingStars').innerHTML = renderStarsHtml(avgNota);
+                    document.getElementById('modalRatingCount').textContent = avgNota.toFixed(1) + ' (' + totalAvaliacoes + ' avalia' + (totalAvaliacoes > 1 ? 'ções' : 'ção') + ')';
+                    ratingRow.style.display = '';
+                } else {
+                    ratingRow.style.display = 'none';
+                }
+            }
+
+            // Discount row
+            var descontoDias = parseInt(btn.dataset.descontoDias);
+            var precoDesconto = parseFloat(btn.dataset.precoDesconto);
+            var descontoRow = document.getElementById('modalDescontoRow');
+            if (descontoRow) {
+                if (descontoDias && precoDesconto) {
+                    document.getElementById('modalDescontoTxt').textContent = 'A partir de ' + descontoDias + ' dias: ' + precoDesconto.toFixed(2) + '€/dia';
+                    descontoRow.style.display = '';
+                } else {
+                    descontoRow.style.display = 'none';
+                }
+            }
+
             modalOverlay.classList.add('active');
         });
     });
@@ -143,7 +183,6 @@ window.abrirModalFerramenta = function (id) {
     document.getElementById('modalNome').textContent      = f.fer_nome;
     document.getElementById('modalCategoria').textContent = f.cat_nome;
     document.getElementById('modalDescricao').textContent = f.fer_descricao || 'Sem descrição disponível.';
-    document.getElementById('modalPreco').textContent     = parseFloat(f.fer_preco).toFixed(2);
     document.getElementById('modalPrecoBase').textContent = parseFloat(f.fer_preco_base).toFixed(2);
 
     var alugarLink   = document.getElementById('modalAlugarLink');
@@ -163,6 +202,33 @@ window.abrirModalFerramenta = function (id) {
         thumbsEl.innerHTML = '';
     } else {
         galeria.style.display = 'none';
+    }
+
+    // Rating row
+    var ratingRow = document.getElementById('modalRatingRow');
+    if (ratingRow) {
+        var avgNota = parseFloat(f.avg_nota_fer);
+        var totalAv = parseInt(f.total_avaliacoes) || 0;
+        if (!isNaN(avgNota) && totalAv > 0) {
+            document.getElementById('modalRatingStars').innerHTML = renderStarsHtml(avgNota);
+            document.getElementById('modalRatingCount').textContent = avgNota.toFixed(1) + ' (' + totalAv + ' avalia' + (totalAv > 1 ? 'ções' : 'ção') + ')';
+            ratingRow.style.display = '';
+        } else {
+            ratingRow.style.display = 'none';
+        }
+    }
+
+    // Discount row
+    var descontoRow = document.getElementById('modalDescontoRow');
+    if (descontoRow) {
+        var dd = parseInt(f.fer_desconto_dias);
+        var pd = parseFloat(f.fer_preco_desconto);
+        if (dd && pd) {
+            document.getElementById('modalDescontoTxt').textContent = 'A partir de ' + dd + ' dias: ' + pd.toFixed(2) + '€/dia';
+            descontoRow.style.display = '';
+        } else {
+            descontoRow.style.display = 'none';
+        }
     }
 
     document.getElementById('modalOverlay').classList.add('active');
@@ -343,6 +409,7 @@ if (typeof flatpickr !== 'undefined' && window.aluguerData && document.getElemen
         dateFormat:  'Y-m-d',
         defaultDate: defaultDates,
         onChange: function (selectedDates) {
+            var descAplic = document.getElementById('descontoAplicado');
             if (selectedDates.length === 2) {
                 var fmt = function (d) {
                     return d.getFullYear() + '-' +
@@ -353,16 +420,29 @@ if (typeof flatpickr !== 'undefined' && window.aluguerData && document.getElemen
                 fimInp.value    = fmt(selectedDates[1]);
                 var dias = Math.round((selectedDates[1] - selectedDates[0]) / 86400000);
                 if (dias > 0) {
-                    totalEl.textContent = (dias * window.aluguerData.precoDia).toFixed(2) + '€ (' +
-                        dias + ' dia' + (dias > 1 ? 's' : '') + ')';
+                    var d = window.aluguerData;
+                    var temDesconto = d.descontoDias && d.precoDesconto && dias >= d.descontoDias;
+                    var precoDia = temDesconto ? d.precoDesconto : d.precoDia;
+                    totalEl.textContent = (dias * precoDia).toFixed(2) + '€ (' +
+                        dias + ' dia' + (dias > 1 ? 's' : '') + ' × ' + precoDia.toFixed(2) + '€)';
                     resumo.style.display = 'block';
+                    if (descAplic) {
+                        if (temDesconto) {
+                            descAplic.textContent = 'Desconto aplicado: ' + precoDia.toFixed(2) + '€/dia (a partir de ' + d.descontoDias + ' dias)';
+                            descAplic.style.display = 'block';
+                        } else {
+                            descAplic.style.display = 'none';
+                        }
+                    }
                 } else {
                     resumo.style.display = 'none';
+                    if (descAplic) descAplic.style.display = 'none';
                 }
             } else {
                 inicioInp.value = '';
                 fimInp.value    = '';
                 resumo.style.display = 'none';
+                if (descAplic) descAplic.style.display = 'none';
             }
         }
     });

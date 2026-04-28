@@ -10,9 +10,12 @@
 	$userFoto = $_SESSION['utl_foto'];
 
 	// Top 10 most rented
-	$q = "SELECT f.fer_id, f.fer_nome, f.fer_descricao, f.fer_preco, f.fer_preco_base, f.fer_lat, f.fer_lng, c.cat_nome,
+	$q = "SELECT f.fer_id, f.fer_nome, f.fer_descricao, f.fer_preco, f.fer_preco_base,
+	             f.fer_lat, f.fer_lng, f.fer_desconto_dias, f.fer_preco_desconto, c.cat_nome,
 	             (SELECT COUNT(*) FROM aluguer a WHERE a.alu_fer_id = f.fer_id AND a.alu_estado IN ('Reservado','Alugado')) > 0 AS ocupada,
-	             (SELECT COUNT(*) FROM aluguer a2 WHERE a2.alu_fer_id = f.fer_id) AS total_alugueres
+	             (SELECT COUNT(*) FROM aluguer a2 WHERE a2.alu_fer_id = f.fer_id) AS total_alugueres,
+	             ROUND((SELECT AVG(av.ava_nota_fer) FROM avaliacao av WHERE av.ava_fer_id = f.fer_id), 1) AS avg_nota_fer,
+	             (SELECT COUNT(*) FROM avaliacao av WHERE av.ava_fer_id = f.fer_id) AS total_avaliacoes
 	      FROM ferramenta f
 	      JOIN categoria c ON f.fer_cat_id = c.cat_id
 	      WHERE f.fer_ativa = 1
@@ -59,9 +62,12 @@
 	}
 	$whereStr = implode(' AND ', $where);
 	$stmtAll = $bd->prepare(
-		"SELECT f.fer_id, f.fer_nome, f.fer_descricao, f.fer_preco, f.fer_preco_base, f.fer_lat, f.fer_lng, c.cat_nome,
+		"SELECT f.fer_id, f.fer_nome, f.fer_descricao, f.fer_preco, f.fer_preco_base,
+		        f.fer_lat, f.fer_lng, f.fer_desconto_dias, f.fer_preco_desconto, c.cat_nome,
 		        (SELECT COUNT(*) FROM aluguer a WHERE a.alu_fer_id = f.fer_id AND a.alu_estado IN ('Reservado','Alugado')) > 0 AS ocupada,
-		        (SELECT img_path FROM ferramenta_imagem WHERE img_fer_id = f.fer_id AND img_principal = 1 LIMIT 1) AS img_principal
+		        (SELECT img_path FROM ferramenta_imagem WHERE img_fer_id = f.fer_id AND img_principal = 1 LIMIT 1) AS img_principal,
+		        ROUND((SELECT AVG(av.ava_nota_fer) FROM avaliacao av WHERE av.ava_fer_id = f.fer_id), 1) AS avg_nota_fer,
+		        (SELECT COUNT(*) FROM avaliacao av WHERE av.ava_fer_id = f.fer_id) AS total_avaliacoes
 		 FROM ferramenta f
 		 JOIN categoria c ON f.fer_cat_id = c.cat_id
 		 WHERE $whereStr
@@ -150,6 +156,10 @@
                                         data-descricao="<?php echo htmlspecialchars($f['fer_descricao'] ?? '', ENT_QUOTES); ?>"
                                         data-preco="<?php echo number_format($f['fer_preco'], 2); ?>"
                                         data-preco-base="<?php echo number_format($f['fer_preco_base'], 2); ?>"
+                                        data-desconto-dias="<?php echo $f['fer_desconto_dias'] ?? ''; ?>"
+                                        data-preco-desconto="<?php echo $f['fer_preco_desconto'] ?? ''; ?>"
+                                        data-avg-nota="<?php echo $f['avg_nota_fer'] ?? ''; ?>"
+                                        data-total-avaliacoes="<?php echo $f['total_avaliacoes'] ?? 0; ?>"
                                         data-imagens="<?php echo htmlspecialchars(json_encode($imgs), ENT_QUOTES); ?>">Ver mais</button>
                                 </article>
                             <?php endforeach; ?>
@@ -210,6 +220,10 @@
                                         data-descricao="<?php echo htmlspecialchars($f['fer_descricao'] ?? '', ENT_QUOTES); ?>"
                                         data-preco="<?php echo number_format($f['fer_preco'], 2); ?>"
                                         data-preco-base="<?php echo number_format($f['fer_preco_base'], 2); ?>"
+                                        data-desconto-dias="<?php echo $f['fer_desconto_dias'] ?? ''; ?>"
+                                        data-preco-desconto="<?php echo $f['fer_preco_desconto'] ?? ''; ?>"
+                                        data-avg-nota="<?php echo $f['avg_nota_fer'] ?? ''; ?>"
+                                        data-total-avaliacoes="<?php echo $f['total_avaliacoes'] ?? 0; ?>"
                                         data-imagens="<?php echo htmlspecialchars(json_encode($f['img_principal'] ? [$f['img_principal']] : []), ENT_QUOTES); ?>">Ver mais</button>
                                 </article>
                             <?php endforeach; ?>
@@ -231,8 +245,9 @@
             </div>
             <div class="modal-field"><span class="modal-label">Categoria:</span><span id="modalCategoria"></span></div>
             <div class="modal-field"><span class="modal-label">Descrição:</span><span id="modalDescricao"></span></div>
-            <div class="modal-field"><span class="modal-label">Preço base:</span><span id="modalPrecoBase"></span>€/dia</div>
-            <div class="modal-field"><span class="modal-label">Preço atual:</span><span id="modalPreco"></span>€/dia</div>
+            <div class="modal-field"><span class="modal-label">Preço:</span><span id="modalPrecoBase"></span>€/dia</div>
+            <div class="modal-field" id="modalDescontoRow" style="display:none;"><span class="modal-label">Desconto:</span><span id="modalDescontoTxt"></span></div>
+            <div class="modal-field" id="modalRatingRow" style="display:none;"><span class="modal-label">Avaliação:</span><span id="modalRatingStars"></span><span id="modalRatingCount" style="font-size:0.82rem;color:#999;margin-left:6px;"></span></div>
             <div class="modal-actions">
                 <a href="#" id="modalAlugarLink" class="simple-button">Alugar</a>
 <span id="modalIndisponivel" class="badge-indisponivel" style="display:none;">Indisponível</span>

@@ -35,6 +35,16 @@
     $imgStmt->execute([$id]);
     $imagens = $imgStmt->fetchAll(PDO::FETCH_COLUMN);
 
+    $reviewStmt = $bd->prepare(
+        "SELECT av.ava_nota_fer, av.ava_texto, av.ava_criada, u.utl_nome
+         FROM avaliacao av
+         JOIN utilizador u ON av.ava_utl_id = u.utl_id
+         WHERE av.ava_fer_id = ? AND av.ava_texto IS NOT NULL AND av.ava_texto != ''
+         ORDER BY av.ava_criada DESC"
+    );
+    $reviewStmt->execute([$id]);
+    $listaReviews = $reviewStmt->fetchAll(PDO::FETCH_ASSOC);
+
     $erro = '';
     $sucesso = false;
 
@@ -146,10 +156,7 @@
                             </div>
                             <?php endif; ?>
                             <div class="info-row">
-                                <span class="info-label">Preço base:</span><?php echo number_format($f['fer_preco_base'], 2); ?>€/dia
-                            </div>
-                            <div class="info-row">
-                                <span class="info-label">Preço atual:</span><?php echo number_format($f['fer_preco'], 2); ?>€/dia
+                                <span class="info-label">Preço:</span><?php echo number_format($f['fer_preco_base'], 2); ?>€/dia
                             </div>
                             <?php if($f['fer_lat'] !== null && $f['fer_lng'] !== null): ?>
                             <div id="mapaFerramenta"
@@ -161,9 +168,14 @@
 
                         <form class="tool-form" method="post">
                             <label>Seleciona o período de aluguer</label>
+                            <?php if($f['fer_desconto_dias'] && $f['fer_preco_desconto']): ?>
+                            <p class="discount-hint">A partir de <?php echo $f['fer_desconto_dias']; ?> dias: <strong><?php echo number_format($f['fer_preco_desconto'], 2); ?>€/dia</strong></p>
+                            <?php endif; ?>
                             <div id="calendarContainer"></div>
                             <input type="hidden" name="inicio" id="inicio" value="<?php echo htmlspecialchars($_POST['inicio'] ?? ''); ?>">
                             <input type="hidden" name="fim" id="fim" value="<?php echo htmlspecialchars($_POST['fim'] ?? ''); ?>">
+
+                            <div id="descontoAplicado" class="msg-sucesso" style="display:none;font-size:0.9rem;"></div>
 
                             <div class="price-summary" id="resumoPreco" style="display:none;">
                                 Total estimado: <span id="totalPreco"></span>
@@ -175,11 +187,28 @@
 
                     <?php endif; ?>
                 </section>
+
+                <?php if(!empty($listaReviews)): ?>
+                <section class="form-section" style="margin-top:0;">
+                    <h2>Reviews da ferramenta</h2>
+                    <?php foreach($listaReviews as $r): ?>
+                    <div class="review-item">
+                        <div class="review-header">
+                            <span class="stars-display" data-nota="<?php echo $r['ava_nota_fer']; ?>"></span>
+                            <strong><?php echo htmlspecialchars($r['utl_nome']); ?></strong>
+                            <span class="review-date"><?php echo date('d/m/Y', strtotime($r['ava_criada'])); ?></span>
+                        </div>
+                        <p class="review-text"><?php echo htmlspecialchars($r['ava_texto']); ?></p>
+                    </div>
+                    <?php endforeach; ?>
+                </section>
+                <?php endif; ?>
+
             </main>
         </div>
     </div>
 
-    <script>window.aluguerData = { bookedRanges: <?php echo json_encode(array_map(function($d) { return ['from' => $d['alu_inicio'], 'to' => $d['alu_fim']]; }, $datasOcupadas)); ?>, precoDia: <?php echo (float)$f['fer_preco']; ?> };</script>
+    <script>window.aluguerData = { bookedRanges: <?php echo json_encode(array_map(function($d) { return ['from' => $d['alu_inicio'], 'to' => $d['alu_fim']]; }, $datasOcupadas)); ?>, precoDia: <?php echo (float)$f['fer_preco']; ?>, descontoDias: <?php echo $f['fer_desconto_dias'] ?? 'null'; ?>, precoDesconto: <?php echo $f['fer_preco_desconto'] ?? 'null'; ?> };</script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
