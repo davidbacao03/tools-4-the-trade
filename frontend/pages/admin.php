@@ -59,6 +59,22 @@
             $bd->prepare("DELETE FROM ferramenta WHERE fer_utl_id = ?")->execute([$targetId]);
             $bd->prepare("DELETE FROM utilizador WHERE utl_id = ?")->execute([$targetId]);
             $sucesso = 'Utilizador eliminado com sucesso.';
+
+        } elseif($action === 'toggle_tool') {
+            $bd->prepare("UPDATE ferramenta SET fer_ativa = NOT fer_ativa WHERE fer_id = ?")
+               ->execute([$targetId]);
+            $sucesso = 'Estado da ferramenta atualizado.';
+
+        } elseif($action === 'delete_tool_admin') {
+            // Remove tool images from disk
+            $imgPaths = $bd->prepare("SELECT img_path FROM ferramenta_imagem WHERE img_fer_id = ?");
+            $imgPaths->execute([$targetId]);
+            foreach($imgPaths->fetchAll(PDO::FETCH_COLUMN) as $p) { @unlink(__DIR__ . '/' . $p); }
+
+            // Delete records: rentals → tool
+            $bd->prepare("DELETE FROM aluguer WHERE alu_fer_id = ?")->execute([$targetId]);
+            $bd->prepare("DELETE FROM ferramenta WHERE fer_id = ?")->execute([$targetId]);
+            $sucesso = 'Ferramenta eliminada com sucesso.';
         }
 
         header('Location: admin.php' . ($sucesso ? '?ok=1' : '?erro=1')); exit;
@@ -88,6 +104,36 @@
         GROUP BY u.utl_id
         ORDER BY u.utl_criado DESC
     ")->fetchAll(PDO::FETCH_ASSOC);
+
+    // Categories for tool filter
+    $cats = $bd->query("SELECT * FROM categoria ORDER BY cat_nome")->fetchAll(PDO::FETCH_ASSOC);
+
+    // All tools with search/filter
+    $catFiltro  = (int)($_GET['cat']  ?? 0);
+    $nomeFiltro = trim($_GET['nome']  ?? '');
+    $toolWhere  = [];
+    $toolParams = [];
+    if($catFiltro) {
+        $toolWhere[]  = "f.fer_cat_id = ?";
+        $toolParams[] = $catFiltro;
+    }
+    if($nomeFiltro !== '') {
+        $toolWhere[]  = "f.fer_nome LIKE ?";
+        $toolParams[] = '%' . $nomeFiltro . '%';
+    }
+    $toolWhereStr = $toolWhere ? 'WHERE ' . implode(' AND ', $toolWhere) : '';
+
+    $stmtFerramentas = $bd->prepare(
+        "SELECT f.*, c.cat_nome, u.utl_nome AS dono_nome,
+                (SELECT COUNT(*) FROM aluguer a WHERE a.alu_fer_id = f.fer_id AND a.alu_estado IN ('Reservado','Alugado')) AS alugueres_ativos
+         FROM ferramenta f
+         JOIN categoria c ON f.fer_cat_id = c.cat_id
+         JOIN utilizador u ON f.fer_utl_id = u.utl_id
+         $toolWhereStr
+         ORDER BY f.fer_criada DESC"
+    );
+    $stmtFerramentas->execute($toolParams);
+    $listaFerramentas = $stmtFerramentas->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
 <html lang="pt">
@@ -107,6 +153,7 @@
                 <a href="Ferramentas.php">Ferramentas</a>
                 <a href="dashboard.php">Dashboard</a>
                 <a href="calendario.php">Calendário</a>
+                <a href="admin.php">Admin</a>
             </nav>
         </aside>
 
@@ -209,6 +256,82 @@
                                 </td>
                             </tr>
                             <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section class="dashboard-section">
+                    <h2 class="section-title">Gestão de Ferramentas</h2>
+
+                    <form method="get" class="filter-bar" style="margin-bottom:16px;">
+                        <input type="text" name="nome" placeholder="Pesquisar por nome..."
+                               value="<?php echo htmlspecialchars($nomeFiltro); ?>"
+                               style="padding:8px 12px; border:1px solid #ddd; border-radius:6px;">
+                        <select name="cat" style="padding:8px 12px; border:1px solid #ddd; border-radius:6px;">
+                            <option value="">Todas as categorias</option>
+                            <?php foreach($cats as $c): ?>
+                                <option value="<?php echo $c['cat_id']; ?>"
+                                    <?php echo $catFiltro == $c['cat_id'] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($c['cat_nome']); ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="submit" class="simple-button">Filtrar</button>
+                        <?php if($catFiltro || $nomeFiltro): ?>
+                            <a href="admin.php" class="simple-button" style="background:#888;">Limpar</a>
+                        <?php endif; ?>
+                    </form>
+
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome</th>
+                                <th>Categoria</th>
+                                <th>Proprietário</th>
+                                <th>Preço</th>
+                                <th>Alugueres ativos</th>
+                                <th>Estado</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if(empty($listaFerramentas)): ?>
+                                <tr><td colspan="8" style="text-align:center; color:#aaa;">Nenhuma ferramenta encontrada.</td></tr>
+                            <?php else: ?>
+                                <?php foreach($listaFerramentas as $t): ?>
+                                <tr>
+                                    <td><?php echo $t['fer_id']; ?></td>
+                                    <td><strong><?php echo htmlspecialchars($t['fer_nome']); ?></strong></td>
+                                    <td><?php echo htmlspecialchars($t['cat_nome']); ?></td>
+                                    <td><?php echo htmlspecialchars($t['dono_nome']); ?></td>
+                                    <td><?php echo number_format($t['fer_preco'], 2); ?>€/dia</td>
+                                    <td><?php echo $t['alugueres_ativos']; ?></td>
+                                    <td>
+                                        <span class="estado-badge <?php echo $t['fer_ativa'] ? 'estado-Alugado' : 'estado-Devolvido'; ?>">
+                                            <?php echo $t['fer_ativa'] ? 'Ativa' : 'Inativa'; ?>
+                                        </span>
+                                    </td>
+                                    <td style="display:flex; gap:8px; flex-wrap:wrap;">
+                                        <form method="post" style="margin:0;">
+                                            <input type="hidden" name="action" value="toggle_tool">
+                                            <input type="hidden" name="target_id" value="<?php echo $t['fer_id']; ?>">
+                                            <button type="submit" class="simple-button" style="font-size:0.78rem; padding:5px 10px;">
+                                                <?php echo $t['fer_ativa'] ? 'Desativar' : 'Ativar'; ?>
+                                            </button>
+                                        </form>
+                                        <form method="post" style="margin:0;" class="delete-tool-form">
+                                            <input type="hidden" name="action" value="delete_tool_admin">
+                                            <input type="hidden" name="target_id" value="<?php echo $t['fer_id']; ?>">
+                                            <button type="submit" class="simple-button btn-delete-tool"
+                                                    style="background:#c0392b; font-size:0.78rem; padding:5px 10px;">
+                                                Eliminar
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </section>
