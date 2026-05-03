@@ -794,7 +794,7 @@ function renderToolCard(f) {
 }
 
 // Filter bar — AJAX update of the "Todas as Ferramentas" grid
-var filterForm = document.querySelector('.filter-bar');
+var filterForm = document.querySelector('.filter-bar:not(#adminFilterForm)');
 if (filterForm) {
     filterForm.addEventListener('submit', function (e) {
         e.preventDefault();
@@ -829,21 +829,132 @@ if (filterForm) {
     });
 }
 
-// Profile page — two-click delete confirmation
-document.querySelectorAll('.delete-tool-form').forEach(function (form) {
-    var btn = form.querySelector('.btn-delete-tool');
-    var confirmed = false;
-    form.addEventListener('submit', function (e) {
-        if (!confirmed) {
-            e.preventDefault();
-            confirmed = true;
-            btn.textContent = 'Tens a certeza?';
-            btn.style.background = '#7b1a1a';
-            setTimeout(function () {
-                confirmed = false;
-                btn.textContent = 'Apagar';
-                btn.style.background = '#c0392b';
-            }, 3000);
-        }
+// Two-click delete confirmation — callable on initial load and after AJAX re-render
+function setupDeleteConfirm(scope) {
+    (scope || document).querySelectorAll('.delete-tool-form').forEach(function (form) {
+        if (form._deleteSetup) return;
+        form._deleteSetup = true;
+        var btn = form.querySelector('.btn-delete-tool');
+        var originalText = btn.textContent.trim();
+        var confirmed = false;
+        form.addEventListener('submit', function (e) {
+            if (!confirmed) {
+                e.preventDefault();
+                confirmed = true;
+                btn.textContent = 'Tens a certeza?';
+                btn.style.background = '#7b1a1a';
+                setTimeout(function () {
+                    confirmed = false;
+                    btn.textContent = originalText;
+                    btn.style.background = '#c0392b';
+                }, 3000);
+            }
+        });
     });
-});
+}
+setupDeleteConfirm();
+
+// Admin page — build a table row from JSON tool data
+function renderAdminToolRow(t) {
+    var ferId = t.fer_id;
+    var ativa = t.fer_ativa == 1;
+    var tr = document.createElement('tr');
+
+    function td(text) {
+        var el = document.createElement('td');
+        el.textContent = text;
+        return el;
+    }
+
+    tr.appendChild(td(ferId));
+    var tdNome = document.createElement('td');
+    var strong = document.createElement('strong');
+    strong.textContent = t.fer_nome;
+    tdNome.appendChild(strong);
+    tr.appendChild(tdNome);
+    tr.appendChild(td(t.cat_nome));
+    tr.appendChild(td(t.dono_nome));
+    tr.appendChild(td(parseFloat(t.fer_preco).toFixed(2) + '€/dia'));
+    tr.appendChild(td(t.alugueres_ativos));
+
+    var tdEstado = document.createElement('td');
+    var badge = document.createElement('span');
+    badge.className = 'estado-badge ' + (ativa ? 'estado-Alugado' : 'estado-Devolvido');
+    badge.textContent = ativa ? 'Ativa' : 'Inativa';
+    tdEstado.appendChild(badge);
+    tr.appendChild(tdEstado);
+
+    var tdAcoes = document.createElement('td');
+    tdAcoes.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
+
+    var formToggle = document.createElement('form');
+    formToggle.method = 'post';
+    formToggle.style.margin = '0';
+    formToggle.innerHTML = '<input type="hidden" name="action" value="toggle_tool">' +
+        '<input type="hidden" name="target_id" value="' + ferId + '">';
+    var btnToggle = document.createElement('button');
+    btnToggle.type = 'submit';
+    btnToggle.className = 'simple-button';
+    btnToggle.style.cssText = 'font-size:0.78rem;padding:5px 10px;';
+    btnToggle.textContent = ativa ? 'Desativar' : 'Ativar';
+    formToggle.appendChild(btnToggle);
+    tdAcoes.appendChild(formToggle);
+
+    var formDel = document.createElement('form');
+    formDel.method = 'post';
+    formDel.style.margin = '0';
+    formDel.className = 'delete-tool-form';
+    formDel.innerHTML = '<input type="hidden" name="action" value="delete_tool_admin">' +
+        '<input type="hidden" name="target_id" value="' + ferId + '">';
+    var btnDel = document.createElement('button');
+    btnDel.type = 'submit';
+    btnDel.className = 'simple-button btn-delete-tool';
+    btnDel.style.cssText = 'background:#c0392b;font-size:0.78rem;padding:5px 10px;';
+    btnDel.textContent = 'Eliminar';
+    formDel.appendChild(btnDel);
+    tdAcoes.appendChild(formDel);
+
+    tr.appendChild(tdAcoes);
+    return tr;
+}
+
+// Admin page — AJAX filter for the tools table
+var adminFilterForm = document.getElementById('adminFilterForm');
+if (adminFilterForm) {
+    adminFilterForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var params = new URLSearchParams(new FormData(adminFilterForm));
+        Array.from(params.keys()).forEach(function (k) { if (!params.get(k)) params.delete(k); });
+
+        var tbody = document.getElementById('adminToolsBody');
+        tbody.style.opacity = '0.4';
+        tbody.style.pointerEvents = 'none';
+
+        fetch('admin_ajax.php?' + params.toString())
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                tbody.style.opacity = '';
+                tbody.style.pointerEvents = '';
+                tbody.innerHTML = '';
+                if (data.tools.length === 0) {
+                    var tr = document.createElement('tr');
+                    var td = document.createElement('td');
+                    td.colSpan = 8;
+                    td.style.cssText = 'text-align:center;color:#aaa;';
+                    td.textContent = 'Nenhuma ferramenta encontrada.';
+                    tr.appendChild(td);
+                    tbody.appendChild(tr);
+                } else {
+                    data.tools.forEach(function (t) { tbody.appendChild(renderAdminToolRow(t)); });
+                    setupDeleteConfirm(tbody);
+                }
+                var clearLink = document.getElementById('adminClearLink');
+                if (clearLink) clearLink.style.display = (params.get('cat') || params.get('nome')) ? '' : 'none';
+                history.pushState({}, '', 'admin.php?' + params.toString());
+            })
+            .catch(function () {
+                tbody.style.opacity = '';
+                tbody.style.pointerEvents = '';
+            });
+    });
+}

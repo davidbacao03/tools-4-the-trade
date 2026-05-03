@@ -262,7 +262,7 @@
                 <section class="dashboard-section">
                     <h2 class="section-title">Gestão de Ferramentas</h2>
 
-                    <form method="get" class="filter-bar" style="margin-bottom:16px;">
+                    <form method="get" class="filter-bar" id="adminFilterForm" style="margin-bottom:16px;">
                         <input type="text" name="nome" placeholder="Pesquisar por nome..."
                                value="<?php echo htmlspecialchars($nomeFiltro); ?>"
                                style="padding:8px 12px; border:1px solid #ddd; border-radius:6px;">
@@ -276,9 +276,8 @@
                             <?php endforeach; ?>
                         </select>
                         <button type="submit" class="simple-button">Filtrar</button>
-                        <?php if($catFiltro || $nomeFiltro): ?>
-                            <a href="admin.php" class="simple-button" style="background:#888;">Limpar</a>
-                        <?php endif; ?>
+                        <a href="admin.php" id="adminClearLink" class="simple-button"
+                           style="background:#888;<?php echo ($catFiltro || $nomeFiltro) ? '' : 'display:none;'; ?>">Limpar</a>
                     </form>
 
                     <table class="dash-table">
@@ -294,7 +293,7 @@
                                 <th>Ações</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="adminToolsBody">
                             <?php if(empty($listaFerramentas)): ?>
                                 <tr><td colspan="8" style="text-align:center; color:#aaa;">Nenhuma ferramenta encontrada.</td></tr>
                             <?php else: ?>
