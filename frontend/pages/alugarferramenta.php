@@ -26,6 +26,13 @@
 
     $propria = ($f['fer_utl_id'] == $_SESSION['utl_id']);
 
+    $isFav = false;
+    if (!$propria) {
+        $favCheck = $bd->prepare("SELECT fav_id FROM favorito WHERE fav_utl_id = ? AND fav_fer_id = ?");
+        $favCheck->execute([$_SESSION['utl_id'], $id]);
+        $isFav = (bool)$favCheck->fetch();
+    }
+
     $rangesStmt = $bd->prepare(
         "SELECT alu_inicio, alu_fim FROM aluguer
          WHERE alu_fer_id = ? AND alu_estado IN ('Reservado','Alugado')
@@ -149,7 +156,15 @@
 
                     <div class="rental-grid">
                         <div class="tool-info-card">
-                            <h2><?php echo htmlspecialchars($f['fer_nome']); ?></h2>
+                            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px;">
+                                <h2 style="margin:0;"><?php echo htmlspecialchars($f['fer_nome']); ?></h2>
+                                <?php if(!$propria): ?>
+                                <button type="button" class="btn-favorito-modal<?php echo $isFav ? ' ativo' : ''; ?>"
+                                        id="alugarFavBtn" data-id="<?php echo $id; ?>">
+                                    <?php echo $isFav ? '♥ Favorito' : '♡ Favorito'; ?>
+                                </button>
+                                <?php endif; ?>
+                            </div>
                             <div class="info-row">
                                 <span class="info-label">Categoria:</span><?php echo htmlspecialchars($f['cat_nome']); ?>
                             </div>

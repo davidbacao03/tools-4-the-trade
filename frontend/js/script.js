@@ -96,8 +96,9 @@ function renderStarsHtml(nota) {
 // Modal — index.php tool detail popup with image gallery
 var modalOverlay = document.getElementById('modalOverlay');
 if (modalOverlay) {
-    document.querySelectorAll('.btn-ver-mais').forEach(function (btn) {
-        btn.addEventListener('click', function () {
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.btn-ver-mais');
+        if (!btn) return;
             document.getElementById('modalNome').textContent = btn.dataset.nome;
             document.getElementById('modalCategoria').textContent = btn.dataset.categoria;
             document.getElementById('modalDescricao').textContent = btn.dataset.descricao || 'Sem descrição disponível.';
@@ -181,8 +182,13 @@ if (modalOverlay) {
                 }
             }
 
+            // Fav button
+            if (modalFavBtn) {
+                modalFavBtn.dataset.id = btn.dataset.id;
+                setModalFavState(modalFavBtn, btn.dataset.favorito === '1');
+            }
+
             modalOverlay.classList.add('active');
-        });
     });
 
     document.getElementById('modalClose').addEventListener('click', function () {
@@ -263,6 +269,13 @@ window.abrirModalFerramenta = function (id) {
         } else {
             donoCard.style.display = 'none';
         }
+    }
+
+    // Fav button
+    var modalFavBtn = document.getElementById('modalFavBtn');
+    if (modalFavBtn) {
+        modalFavBtn.dataset.id = f.fer_id;
+        setModalFavState(modalFavBtn, f.is_favorito == 1);
     }
 
     document.getElementById('modalOverlay').classList.add('active');
@@ -679,6 +692,140 @@ if (ratingModalOverlay) {
     });
     ratingModalOverlay.addEventListener('click', function (e) {
         if (e.target === ratingModalOverlay) ratingModalOverlay.classList.remove('active');
+    });
+}
+
+// Favourites — heart button on tool cards and in the Ver mais modal
+function toggleFavorito(ferId, onSuccess) {
+    var fd = new FormData();
+    fd.append('fer_id', ferId);
+    fetch('favorito.php', { method: 'POST', body: fd })
+        .then(function (r) { return r.json(); })
+        .then(onSuccess)
+        .catch(function () {});
+}
+
+function setModalFavState(btn, isFav) {
+    btn.classList.toggle('ativo', isFav);
+    btn.textContent = isFav ? '♥ Favorito' : '♡ Favorito';
+    btn.dataset.favorito = isFav ? '1' : '0';
+}
+
+var modalFavBtn = document.getElementById('modalFavBtn');
+if (modalFavBtn) {
+    modalFavBtn.addEventListener('click', function () {
+        toggleFavorito(modalFavBtn.dataset.id, function (data) {
+            setModalFavState(modalFavBtn, data.favorito);
+        });
+    });
+}
+
+var alugarFavBtn = document.getElementById('alugarFavBtn');
+if (alugarFavBtn) {
+    alugarFavBtn.addEventListener('click', function () {
+        toggleFavorito(alugarFavBtn.dataset.id, function (data) {
+            setModalFavState(alugarFavBtn, data.favorito);
+        });
+    });
+}
+
+// Render a tool card from AJAX data (mirrors the PHP card HTML)
+function renderToolCard(f) {
+    var isFav = f.is_favorito == 1;
+    var card = document.createElement('article');
+    card.className = 'tool-card';
+    if (f.fer_lat) card.dataset.lat = f.fer_lat;
+    if (f.fer_lng) card.dataset.lng = f.fer_lng;
+
+    if (f.img_principal) {
+        var img = document.createElement('img');
+        img.src = f.img_principal;
+        img.className = 'tool-card-img';
+        img.alt = f.fer_nome;
+        card.appendChild(img);
+    } else {
+        var ph = document.createElement('div');
+        ph.className = 'tool-card-img-placeholder';
+        card.appendChild(ph);
+    }
+
+    var h3 = document.createElement('h3');
+    h3.textContent = f.fer_nome;
+    card.appendChild(h3);
+
+    var pCat = document.createElement('p');
+    pCat.textContent = 'Categoria: ' + f.cat_nome;
+    card.appendChild(pCat);
+
+    var pPreco = document.createElement('p');
+    pPreco.textContent = parseFloat(f.fer_preco_base).toFixed(2) + '€/dia';
+    card.appendChild(pPreco);
+
+    if (f.ocupada == 1) {
+        var badge = document.createElement('span');
+        badge.className = 'badge-indisponivel';
+        badge.textContent = 'Indisponível';
+        card.appendChild(badge);
+    }
+
+    var verBtn = document.createElement('button');
+    verBtn.type = 'button';
+    verBtn.className = 'btn-ver-mais';
+    verBtn.textContent = 'Ver mais';
+    verBtn.dataset.id            = f.fer_id;
+    verBtn.dataset.ocupada       = f.ocupada ? '1' : '0';
+    verBtn.dataset.nome          = f.fer_nome;
+    verBtn.dataset.categoria     = f.cat_nome;
+    verBtn.dataset.descricao     = f.fer_descricao || '';
+    verBtn.dataset.preco         = parseFloat(f.fer_preco).toFixed(2);
+    verBtn.dataset.precoBase     = parseFloat(f.fer_preco_base).toFixed(2);
+    verBtn.dataset.descontoDias  = f.fer_desconto_dias || '';
+    verBtn.dataset.precoDesconto = f.fer_preco_desconto || '';
+    verBtn.dataset.avgNota       = f.avg_nota_fer || '';
+    verBtn.dataset.totalAvaliacoes = f.total_avaliacoes || 0;
+    verBtn.dataset.donoNome      = f.dono_nome || '';
+    verBtn.dataset.donoFoto      = f.dono_foto || '';
+    verBtn.dataset.avgNotaDono   = f.avg_nota_dono || '';
+    verBtn.dataset.favorito      = isFav ? '1' : '0';
+    verBtn.dataset.imagens       = JSON.stringify(f.img_principal ? [f.img_principal] : []);
+    card.appendChild(verBtn);
+
+    return card;
+}
+
+// Filter bar — AJAX update of the "Todas as Ferramentas" grid
+var filterForm = document.querySelector('.filter-bar');
+if (filterForm) {
+    filterForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var params = new URLSearchParams(new FormData(filterForm));
+        params.forEach(function (v, k) { if (!v) params.delete(k); });
+
+        var grid = document.getElementById('todasGrid');
+        if (!grid) return;
+        grid.style.opacity = '0.4';
+        grid.style.pointerEvents = 'none';
+
+        fetch('ferramentas_ajax.php?' + params.toString())
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                grid.innerHTML = '';
+                grid.style.opacity = '';
+                grid.style.pointerEvents = '';
+                if (data.tools.length === 0) {
+                    var p = document.createElement('p');
+                    p.className = 'empty-msg';
+                    p.textContent = 'Nenhuma ferramenta encontrada.';
+                    grid.appendChild(p);
+                } else {
+                    data.tools.forEach(function (f) { grid.appendChild(renderToolCard(f)); });
+                }
+                history.pushState({}, '', 'index.php?' + params.toString());
+            })
+            .catch(function () {
+                grid.style.opacity = '';
+                grid.style.pointerEvents = '';
+            });
     });
 }
 

@@ -9,6 +9,11 @@
 	}
 	$userFoto = $_SESSION['utl_foto'];
 
+	// User favourites (keyed by fer_id for O(1) lookup)
+	$favStmt = $bd->prepare("SELECT fav_fer_id FROM favorito WHERE fav_utl_id = ?");
+	$favStmt->execute([$_SESSION['utl_id']]);
+	$favIds = array_flip($favStmt->fetchAll(PDO::FETCH_COLUMN));
+
 	// Top 10 most rented
 	$q = "SELECT f.fer_id, f.fer_nome, f.fer_descricao, f.fer_preco, f.fer_preco_base,
 	             f.fer_lat, f.fer_lng, f.fer_desconto_dias, f.fer_preco_desconto, c.cat_nome,
@@ -48,7 +53,11 @@
 	// All tools with filters
 	$where  = ["f.fer_ativa = 1"];
 	$params = [];
-	if(!empty($_GET['cat'])) {
+	$showFavoritos = isset($_GET['cat']) && $_GET['cat'] === 'favoritos';
+	if($showFavoritos) {
+		$where[]  = "f.fer_id IN (SELECT fav_fer_id FROM favorito WHERE fav_utl_id = ?)";
+		$params[] = $_SESSION['utl_id'];
+	} elseif(!empty($_GET['cat'])) {
 		$where[]  = "f.fer_cat_id = ?";
 		$params[] = (int)$_GET['cat'];
 	}
@@ -139,6 +148,7 @@
                             <?php foreach($ferramentas as $f):
                                 $imgs = $imagesByTool[$f['fer_id']] ?? [];
                                 $mainImg = $imgs[0] ?? null;
+                                $isFav = isset($favIds[$f['fer_id']]);
                             ?>
                                 <article class="tool-card"
                                     data-lat="<?php echo $f['fer_lat'] !== null ? (float)$f['fer_lat'] : ''; ?>"
@@ -169,6 +179,7 @@
                                         data-dono-nome="<?php echo htmlspecialchars($f['dono_nome'] ?? '', ENT_QUOTES); ?>"
                                         data-dono-foto="<?php echo htmlspecialchars($f['dono_foto'] ?? '', ENT_QUOTES); ?>"
                                         data-avg-nota-dono="<?php echo $f['avg_nota_dono'] ?? ''; ?>"
+                                        data-favorito="<?php echo $isFav ? '1' : '0'; ?>"
                                         data-imagens="<?php echo htmlspecialchars(json_encode($imgs), ENT_QUOTES); ?>">Ver mais</button>
                                 </article>
                             <?php endforeach; ?>
@@ -182,8 +193,9 @@
                     <form method="get" class="filter-bar">
                         <select name="cat">
                             <option value="">Todas as categorias</option>
+                            <option value="favoritos" <?php echo $showFavoritos ? 'selected' : ''; ?>>♥ Favoritos</option>
                             <?php foreach($cats as $c): ?>
-                                <option value="<?php echo $c['cat_id']; ?>" <?php echo (isset($_GET['cat']) && $_GET['cat'] == $c['cat_id']) ? 'selected' : ''; ?>>
+                                <option value="<?php echo $c['cat_id']; ?>" <?php echo (!$showFavoritos && isset($_GET['cat']) && $_GET['cat'] == $c['cat_id']) ? 'selected' : ''; ?>>
                                     <?php echo htmlspecialchars($c['cat_nome']); ?>
                                 </option>
                             <?php endforeach; ?>
@@ -202,11 +214,13 @@
                         <?php endif; ?>
                     </form>
 
-                    <div class="tools-grid">
+                    <div class="tools-grid" id="todasGrid">
                         <?php if(empty($todasFerramentas)): ?>
                             <p class="empty-msg">Nenhuma ferramenta encontrada.</p>
                         <?php else: ?>
-                            <?php foreach($todasFerramentas as $f): ?>
+                            <?php foreach($todasFerramentas as $f):
+                                $isFav = isset($favIds[$f['fer_id']]);
+                            ?>
                                 <article class="tool-card"
                                     data-lat="<?php echo $f['fer_lat'] !== null ? (float)$f['fer_lat'] : ''; ?>"
                                     data-lng="<?php echo $f['fer_lng'] !== null ? (float)$f['fer_lng'] : ''; ?>">
@@ -236,6 +250,7 @@
                                         data-dono-nome="<?php echo htmlspecialchars($f['dono_nome'] ?? '', ENT_QUOTES); ?>"
                                         data-dono-foto="<?php echo htmlspecialchars($f['dono_foto'] ?? '', ENT_QUOTES); ?>"
                                         data-avg-nota-dono="<?php echo $f['avg_nota_dono'] ?? ''; ?>"
+                                        data-favorito="<?php echo $isFav ? '1' : '0'; ?>"
                                         data-imagens="<?php echo htmlspecialchars(json_encode($f['img_principal'] ? [$f['img_principal']] : []), ENT_QUOTES); ?>">Ver mais</button>
                                 </article>
                             <?php endforeach; ?>
@@ -269,12 +284,13 @@
             </div>
             <div class="modal-actions">
                 <a href="#" id="modalAlugarLink" class="simple-button">Alugar</a>
-<span id="modalIndisponivel" class="badge-indisponivel" style="display:none;">Indisponível</span>
+                <button type="button" id="modalFavBtn" class="btn-favorito-modal">♡ Favorito</button>
+                <span id="modalIndisponivel" class="badge-indisponivel" style="display:none;">Indisponível</span>
             </div>
         </div>
     </div>
 
-    <script>window.ferramentasGeo = <?php echo json_encode(array_values($ferramentasComLoc)); ?>;</script>
+    <script>window.ferramentasGeo = <?php echo json_encode(array_values(array_map(function($t) use ($favIds) { $t['is_favorito'] = isset($favIds[$t['fer_id']]) ? 1 : 0; return $t; }, $ferramentasComLoc))); ?>;</script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="../js/script.js?v=2"></script>
 </body>

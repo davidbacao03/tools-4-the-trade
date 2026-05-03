@@ -101,6 +101,22 @@ CREATE TABLE IF NOT EXISTS `aluguer` (
 
 -- --------------------------------------------------------
 
+-- Favourites — one row per user/tool pair. Cascade-deleted when user or tool is deleted.
+CREATE TABLE IF NOT EXISTS `favorito` (
+  `fav_id`     int(11)  NOT NULL AUTO_INCREMENT,
+  `fav_utl_id` int(11)  NOT NULL,
+  `fav_fer_id` int(11)  NOT NULL,
+  `fav_criado` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`fav_id`),
+  UNIQUE KEY `fav_unique` (`fav_utl_id`,`fav_fer_id`),
+  KEY `fav_utl_id` (`fav_utl_id`),
+  KEY `fav_fer_id` (`fav_fer_id`),
+  CONSTRAINT `favorito_ibfk_1` FOREIGN KEY (`fav_utl_id`) REFERENCES `utilizador` (`utl_id`) ON DELETE CASCADE,
+  CONSTRAINT `favorito_ibfk_2` FOREIGN KEY (`fav_fer_id`) REFERENCES `ferramenta`  (`fer_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
 -- One rating per rental (UNIQUE on ava_alu_id). Cascade-deleted with aluguer.
 -- ava_nota_fer = tool rating, ava_nota_dono = owner rating (both 0.5–5.0).
 -- ava_texto = optional written review of the tool only.
