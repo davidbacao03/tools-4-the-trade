@@ -5,7 +5,7 @@
     if(isset($_POST['nome'])) {
         try {
             $bd->prepare("INSERT INTO utilizador (utl_nome, utl_email, utl_passe) VALUES (?,?,?)")
-               ->execute([$_POST['nome'], $_POST['email'], $_POST['passe']]);
+               ->execute([$_POST['nome'], $_POST['email'], password_hash($_POST['passe'], PASSWORD_DEFAULT)]);
             header('Location: login.php?registered=1'); exit;
         } catch(PDOException $e) {
             if($e->getCode() === '23000') $erro = 'Este email já está registado.';

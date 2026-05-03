@@ -15,11 +15,10 @@
 <?php if(isset($_GET['registered'])): ?><p style="color:#27ae60;margin:0;font-size:0.9rem;">Conta criada com sucesso! Podes fazer login.</p><?php endif; ?>
 <?php
 	if(isset($_POST['email'])) {
-		$q = "SELECT * FROM utilizador WHERE utl_email=? AND utl_passe=?";
-		$stat = $bd->prepare($q);
-		$stat->execute(array($_POST['email'], $_POST['passe']));
+		$stat = $bd->prepare("SELECT * FROM utilizador WHERE utl_email = ?");
+		$stat->execute([$_POST['email']]);
 		$linha = $stat->fetch();
-		if($linha) {
+		if($linha && password_verify($_POST['passe'], $linha['utl_passe'])) {
 			$_SESSION['utl_id'] = $linha['utl_id'];
 			$_SESSION['utl_nome'] = $linha['utl_nome'];
 			$_SESSION['utl_admin'] = $linha['utl_admin'];
