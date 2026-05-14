@@ -140,3 +140,20 @@ CREATE TABLE IF NOT EXISTS `avaliacao` (
   CONSTRAINT `avaliacao_ibfk_3` FOREIGN KEY (`ava_utl_id`)  REFERENCES `utilizador` (`utl_id`),
   CONSTRAINT `avaliacao_ibfk_4` FOREIGN KEY (`ava_dono_id`) REFERENCES `utilizador` (`utl_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+-- Reports — one report per user/tool pair. Cascade-deleted when user or tool is deleted.
+CREATE TABLE IF NOT EXISTS `denuncia` (
+  `den_id`        int(11)    NOT NULL AUTO_INCREMENT,
+  `den_fer_id`    int(11)    NOT NULL,
+  `den_utl_id`    int(11)    NOT NULL,
+  `den_motivo`    enum('Conteúdo inapropriado','Ferramenta inexistente','Preço enganoso','Utilizador suspeito','Outro') NOT NULL,
+  `den_descricao` text       DEFAULT NULL,
+  `den_estado`    enum('Pendente','Resolvido','Ignorado') NOT NULL DEFAULT 'Pendente',
+  `den_criada`    datetime   DEFAULT current_timestamp(),
+  PRIMARY KEY (`den_id`),
+  UNIQUE KEY `den_unique` (`den_fer_id`, `den_utl_id`),
+  CONSTRAINT `denuncia_ibfk_1` FOREIGN KEY (`den_fer_id`) REFERENCES `ferramenta` (`fer_id`) ON DELETE CASCADE,
+  CONSTRAINT `denuncia_ibfk_2` FOREIGN KEY (`den_utl_id`) REFERENCES `utilizador` (`utl_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

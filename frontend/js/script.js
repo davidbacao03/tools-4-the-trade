@@ -958,3 +958,139 @@ if (adminFilterForm) {
             });
     });
 }
+
+// Report modal — open from tool detail modal
+var reportOverlay = document.getElementById('reportOverlay');
+if (reportOverlay) {
+    var reportClose  = document.getElementById('reportClose');
+    var reportSubmit = document.getElementById('reportSubmitBtn');
+    var reportMsg    = document.getElementById('reportMsg');
+
+    var modalReportBtn = document.getElementById('modalReportBtn');
+    if (modalReportBtn) {
+        modalReportBtn.addEventListener('click', function () {
+            var favBtn = document.getElementById('modalFavBtn');
+            document.getElementById('reportFerId').value = favBtn ? favBtn.dataset.id : '';
+            document.getElementById('reportMotivo').value = '';
+            document.getElementById('reportDescricao').value = '';
+            reportMsg.textContent = '';
+            reportSubmit.style.display = '';
+            reportSubmit.disabled = false;
+            reportOverlay.classList.add('active');
+        });
+    }
+
+    reportClose.addEventListener('click', function () { reportOverlay.classList.remove('active'); });
+    reportOverlay.addEventListener('click', function (e) {
+        if (e.target === reportOverlay) reportOverlay.classList.remove('active');
+    });
+
+    reportSubmit.addEventListener('click', function () {
+        var ferId     = document.getElementById('reportFerId').value;
+        var motivo    = document.getElementById('reportMotivo').value;
+        var descricao = document.getElementById('reportDescricao').value;
+
+        if (!motivo) {
+            reportMsg.style.color = '#c0392b';
+            reportMsg.textContent = 'Seleciona um motivo.';
+            return;
+        }
+
+        reportSubmit.disabled = true;
+        var fd = new FormData();
+        fd.append('fer_id',    ferId);
+        fd.append('motivo',    motivo);
+        fd.append('descricao', descricao);
+
+        fetch('reportar_ajax.php', { method: 'POST', body: fd })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                reportSubmit.disabled = false;
+                if (data.success) {
+                    reportMsg.style.color = '#27ae60';
+                    reportMsg.textContent = 'Denúncia enviada com sucesso.';
+                    reportSubmit.style.display = 'none';
+                } else if (data.error === 'already_reported') {
+                    reportMsg.style.color = '#c0392b';
+                    reportMsg.textContent = 'Já reportaste esta ferramenta.';
+                } else {
+                    reportMsg.style.color = '#c0392b';
+                    reportMsg.textContent = 'Erro ao enviar. Tenta novamente.';
+                }
+            })
+            .catch(function () {
+                reportSubmit.disabled = false;
+                reportMsg.style.color = '#c0392b';
+                reportMsg.textContent = 'Erro de ligação.';
+            });
+    });
+}
+
+// Admin reports table — AJAX load and filter
+var reportFilterForm = document.getElementById('reportFilterForm');
+if (reportFilterForm) {
+    function renderReportRow(r) {
+        var tr = document.createElement('tr');
+        var data = new Date(r.den_criada).toLocaleDateString('pt-PT');
+        tr.innerHTML =
+            '<td>' + r.den_id + '</td>' +
+            '<td><a href="alugarferramenta.php?id=' + r.fer_id + '" style="color:inherit;">' + r.fer_nome + '</a></td>' +
+            '<td>' + r.reporter + '</td>' +
+            '<td>' + r.den_motivo + '</td>' +
+            '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + (r.den_descricao || '') + '">' + (r.den_descricao || '—') + '</td>' +
+            '<td>' + data + '</td>' +
+            '<td><span class="estado-badge estado-' + r.den_estado + '">' + r.den_estado + '</span></td>' +
+            '<td style="display:flex;gap:6px;flex-wrap:wrap;">' +
+                (r.den_estado !== 'Resolvido' ? '<button class="simple-button btn-report-action" style="font-size:0.78rem;padding:5px 10px;" data-id="' + r.den_id + '" data-estado="Resolvido">Resolvido</button>' : '') +
+                (r.den_estado !== 'Ignorado'  ? '<button class="simple-button btn-report-action" style="font-size:0.78rem;padding:5px 10px;background:#888;" data-id="' + r.den_id + '" data-estado="Ignorado">Ignorar</button>'   : '') +
+            '</td>';
+        return tr;
+    }
+
+    function loadReports(estado) {
+        var tbody = document.getElementById('reportsTbody');
+        tbody.style.opacity = '0.4';
+        var url = 'reportar_ajax.php' + (estado ? '?estado=' + encodeURIComponent(estado) : '');
+        fetch(url)
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                tbody.style.opacity = '';
+                tbody.innerHTML = '';
+                if (!data.reports || data.reports.length === 0) {
+                    var tr = document.createElement('tr');
+                    var td = document.createElement('td');
+                    td.colSpan = 8;
+                    td.style.cssText = 'text-align:center;color:#aaa;';
+                    td.textContent = 'Nenhuma denúncia encontrada.';
+                    tr.appendChild(td);
+                    tbody.appendChild(tr);
+                } else {
+                    data.reports.forEach(function (r) { tbody.appendChild(renderReportRow(r)); });
+                }
+            })
+            .catch(function () { tbody.style.opacity = ''; });
+    }
+
+    // Update report state on button click
+    document.getElementById('reportsTbody').addEventListener('click', function (e) {
+        var btn = e.target.closest('.btn-report-action');
+        if (!btn) return;
+        var fd = new FormData();
+        fd.append('action', 'update_estado');
+        fd.append('den_id', btn.dataset.id);
+        fd.append('estado', btn.dataset.estado);
+        fetch('reportar_ajax.php', { method: 'POST', body: fd })
+            .then(function (r) { return r.json(); })
+            .then(function () {
+                loadReports(document.getElementById('reportEstadoFiltro').value);
+            });
+    });
+
+    reportFilterForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        loadReports(document.getElementById('reportEstadoFiltro').value);
+    });
+
+    // Load reports on page open
+    loadReports('');
+}

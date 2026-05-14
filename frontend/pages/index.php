@@ -285,7 +285,35 @@
             <div class="modal-actions">
                 <a href="#" id="modalAlugarLink" class="simple-button">Alugar</a>
                 <button type="button" id="modalFavBtn" class="btn-favorito-modal">♡ Favorito</button>
+                <button type="button" id="modalReportBtn" class="btn-reportar">⚑ Reportar</button>
                 <span id="modalIndisponivel" class="badge-indisponivel" style="display:none;">Indisponível</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="reportOverlay">
+        <div class="modal-box" style="max-width:420px;">
+            <button class="modal-close" id="reportClose">&times;</button>
+            <h2 style="margin-bottom:16px;">Reportar ferramenta</h2>
+            <input type="hidden" id="reportFerId">
+            <div class="modal-field" style="flex-direction:column; align-items:flex-start; gap:6px;">
+                <span class="modal-label">Motivo</span>
+                <select id="reportMotivo" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                    <option value="">Selecionar motivo...</option>
+                    <option>Conteúdo inapropriado</option>
+                    <option>Ferramenta inexistente</option>
+                    <option>Preço enganoso</option>
+                    <option>Utilizador suspeito</option>
+                    <option>Outro</option>
+                </select>
+            </div>
+            <div class="modal-field" style="flex-direction:column; align-items:flex-start; gap:6px; margin-top:12px;">
+                <span class="modal-label">Descrição (opcional)</span>
+                <textarea id="reportDescricao" rows="3" style="width:100%; padding:8px; border:1px solid #ddd; border-radius:6px; resize:vertical;"></textarea>
+            </div>
+            <div class="modal-actions" style="margin-top:16px;">
+                <button type="button" id="reportSubmitBtn" class="simple-button">Enviar</button>
+                <span id="reportMsg" style="font-size:0.85rem; margin-left:10px;"></span>
             </div>
         </div>
     </div>

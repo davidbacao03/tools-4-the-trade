@@ -334,6 +334,38 @@
                     </table>
                 </section>
 
+                <section class="dashboard-section">
+                    <h2 class="section-title">Denúncias</h2>
+
+                    <form id="reportFilterForm" class="filter-bar" style="margin-bottom:16px;">
+                        <select name="estado" id="reportEstadoFiltro" style="padding:8px 12px; border:1px solid #ddd; border-radius:6px;">
+                            <option value="">Todos os estados</option>
+                            <option value="Pendente">Pendente</option>
+                            <option value="Resolvido">Resolvido</option>
+                            <option value="Ignorado">Ignorado</option>
+                        </select>
+                        <button type="submit" class="simple-button">Filtrar</button>
+                    </form>
+
+                    <table class="dash-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Ferramenta</th>
+                                <th>Reportado por</th>
+                                <th>Motivo</th>
+                                <th>Descrição</th>
+                                <th>Data</th>
+                                <th>Estado</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportsTbody">
+                            <tr><td colspan="8" style="text-align:center; color:#aaa;">A carregar...</td></tr>
+                        </tbody>
+                    </table>
+                </section>
+
             </main>
         </div>
     </div>
