@@ -90,7 +90,11 @@
             (SELECT COUNT(*) FROM utilizador WHERE utl_admin = 1)       AS total_admins,
             (SELECT COUNT(*) FROM ferramenta WHERE fer_ativa = 1)       AS total_ferramentas,
             (SELECT COUNT(*) FROM aluguer)                              AS total_alugueres,
-            (SELECT COUNT(*) FROM aluguer WHERE alu_estado = 'Alugado') AS ativos
+            (SELECT COUNT(*) FROM aluguer WHERE alu_estado = 'Alugado') AS ativos,
+            (SELECT COUNT(DISTINCT fer_id) FROM ferramenta WHERE fer_ativa = 1) AS total_fer_ativas,
+            (SELECT COUNT(DISTINCT alu_fer_id) FROM aluguer)                                          AS fer_com_aluguer,
+            (SELECT COUNT(*) FROM (SELECT alu_fer_id FROM aluguer GROUP BY alu_fer_id HAVING COUNT(*) > 1) x) AS fer_mais_uma
+
     ")->fetch(PDO::FETCH_ASSOC);
 
     // All users with tool and rental counts
@@ -196,6 +200,82 @@
                             <div class="stat-num"><?php echo $stats['ativos']; ?></div>
                         </div>
                     </div>
+
+                    <?php
+                        $total   = (int)$stats['total_fer_ativas'];
+                        $comAlu  = min((int)$stats['fer_com_aluguer'], $total);
+                        $semAlu  = max($total - $comAlu, 0);
+                        $taxa    = $total > 0 ? round($comAlu / $total * 100, 1) : 0;
+                        $maisUma = (int)$stats['fer_mais_uma'];
+                    ?>
+                    <div style="display:flex; align-items:center; gap:32px; margin-top:24px; flex-wrap:wrap;">
+                        <div style="width:160px; height:160px; flex-shrink:0;">
+                            <canvas id="chartConversao"></canvas>
+                        </div>
+                        <div>
+                            <h3 style="margin:0 0 12px; font-size:0.95rem;">Taxa de Conversão de Ferramentas</h3>
+                            <table class="dash-table" style="min-width:280px;">
+                                <thead>
+                                    <tr>
+                                        <th>Estado</th>
+                                        <th>Ferramentas</th>
+                                        <th>Percentagem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Já foram alugadas</td>
+                                        <td><?php echo $comAlu; ?></td>
+                                        <td><?php echo $taxa; ?>%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Nunca alugadas</td>
+                                        <td><?php echo $semAlu; ?></td>
+                                        <td><?php echo $total > 0 ? round(100 - $taxa, 1) : 0; ?>%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Alugadas mais de uma vez</td>
+                                        <td><?php echo $maisUma; ?></td>
+                                        <td><?php echo $total > 0 ? round($maisUma / $total * 100, 1) : 0; ?>%</td>
+                                    </tr>
+                                    <tr style="font-weight:600;">
+                                        <td>Total</td>
+                                        <td><?php echo $total; ?></td>
+                                        <td>100%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+                    <script>
+                        new Chart(document.getElementById('chartConversao'), {
+                            type: 'doughnut',
+                            data: {
+                                labels: ['Ja alugadas', 'Nunca alugadas', 'Mais de uma vez'],
+                                datasets: [{
+                                    data: [<?php echo $comAlu; ?>, <?php echo $semAlu; ?>, <?php echo $maisUma; ?>],
+                                    backgroundColor: ['#43b89c', '#e0e0e0', '#6c63ff'],
+                                    borderWidth: 0
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                cutout: '70%',
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(c) {
+                                                var total = c.dataset.data.reduce(function(a,b){return a+b;}, 0);
+                                                return c.label + ': ' + c.raw + ' (' + (total > 0 ? Math.round(c.raw/total*100) : 0) + '%)';
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    </script>
                 </section>
 
                 <section class="dashboard-section">
