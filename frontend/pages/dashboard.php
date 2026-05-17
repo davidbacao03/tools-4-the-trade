@@ -127,6 +127,54 @@
     );
     $hist->execute([$uid]);
     $historico = $hist->fetchAll(PDO::FETCH_ASSOC);
+
+    // Average rental duration — my tools (as owner) per tool
+    $mediaToolsStmt = $bd->prepare(
+        "SELECT f.fer_nome,
+                ROUND(AVG(DATEDIFF(a.alu_fim, a.alu_inicio)), 1) AS media_dias,
+                COUNT(a.alu_id) AS total_alugueres
+         FROM aluguer a
+         JOIN ferramenta f ON a.alu_fer_id = f.fer_id
+         WHERE f.fer_utl_id = ? AND a.alu_estado = 'Devolvido'
+         GROUP BY f.fer_id, f.fer_nome
+         HAVING total_alugueres > 0
+         ORDER BY media_dias DESC"
+    );
+    $mediaToolsStmt->execute([$uid]);
+    $mediaTools = $mediaToolsStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Average rental duration — as renter (tools I rented)
+    $mediaRenterStmt = $bd->prepare(
+        "SELECT f.fer_nome,
+                ROUND(AVG(DATEDIFF(a.alu_fim, a.alu_inicio)), 1) AS media_dias,
+                COUNT(a.alu_id) AS total_alugueres
+         FROM aluguer a
+         JOIN ferramenta f ON a.alu_fer_id = f.fer_id
+         WHERE a.alu_utl_id = ? AND a.alu_estado = 'Devolvido'
+         GROUP BY f.fer_id, f.fer_nome
+         HAVING total_alugueres > 0
+         ORDER BY media_dias DESC"
+    );
+    $mediaRenterStmt->execute([$uid]);
+    $mediaRenter = $mediaRenterStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Overall averages
+    $mediaGeralOwnerStmt = $bd->prepare(
+        "SELECT ROUND(AVG(DATEDIFF(a.alu_fim, a.alu_inicio)), 1) AS media
+         FROM aluguer a
+         JOIN ferramenta f ON a.alu_fer_id = f.fer_id
+         WHERE f.fer_utl_id = ? AND a.alu_estado = 'Devolvido'"
+    );
+    $mediaGeralOwnerStmt->execute([$uid]);
+    $mediaGeralOwner = $mediaGeralOwnerStmt->fetchColumn() ?: 0;
+
+    $mediaGeralRenterStmt = $bd->prepare(
+        "SELECT ROUND(AVG(DATEDIFF(a.alu_fim, a.alu_inicio)), 1) AS media
+         FROM aluguer a
+         WHERE a.alu_utl_id = ? AND a.alu_estado = 'Devolvido'"
+    );
+    $mediaGeralRenterStmt->execute([$uid]);
+    $mediaGeralRenter = $mediaGeralRenterStmt->fetchColumn() ?: 0;
 ?>
 <!DOCTYPE html>
 <html lang="pt">
@@ -314,6 +362,75 @@
                             })();
                         </script>
                     <?php endif; ?>
+                </section>
+
+                <!-- Average rental duration -->
+                <section class="dashboard-section">
+                    <h2 class="section-title">Duração média de aluguer</h2>
+                    <div class="stats-grid-2" style="margin-bottom:24px;">
+                        <div class="stat-box-accent">
+                            <h3>Média das minhas ferramentas</h3>
+                            <div class="stat-num"><?php echo $mediaGeralOwner; ?><span style="font-size:1rem;font-weight:400;"> dias</span></div>
+                        </div>
+                        <div class="stat-box-accent">
+                            <h3>Média dos meus alugueres</h3>
+                            <div class="stat-num"><?php echo $mediaGeralRenter; ?><span style="font-size:1rem;font-weight:400;"> dias</span></div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:32px; flex-wrap:wrap;">
+                        <?php if(!empty($mediaTools)): ?>
+                        <div style="flex:1; min-width:280px;">
+                            <h3 style="font-size:0.92rem; margin-bottom:12px;">Por ferramenta minha</h3>
+                            <table class="dash-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ferramenta</th>
+                                        <th>Alugueres</th>
+                                        <th>Média (dias)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach($mediaTools as $m): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($m['fer_nome']); ?></td>
+                                        <td><?php echo $m['total_alugueres']; ?>×</td>
+                                        <td><?php echo $m['media_dias']; ?> dias</td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if(!empty($mediaRenter)): ?>
+                        <div style="flex:1; min-width:280px;">
+                            <h3 style="font-size:0.92rem; margin-bottom:12px;">Ferramentas que aluguei</h3>
+                            <table class="dash-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ferramenta</th>
+                                        <th>Alugueres</th>
+                                        <th>Média (dias)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach($mediaRenter as $m): ?>
+                                    <tr>
+                                        <td><?php echo htmlspecialchars($m['fer_nome']); ?></td>
+                                        <td><?php echo $m['total_alugueres']; ?>×</td>
+                                        <td><?php echo $m['media_dias']; ?> dias</td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <?php endif; ?>
+
+                        <?php if(empty($mediaTools) && empty($mediaRenter)): ?>
+                            <p class="empty-msg">Ainda não há dados suficientes para calcular médias.</p>
+                        <?php endif; ?>
+                    </div>
                 </section>
 
                 <!-- Tool usage tracker -->

@@ -139,6 +139,103 @@
     );
     $stmtFerramentas->execute($toolParams);
     $listaFerramentas = $stmtFerramentas->fetchAll(PDO::FETCH_ASSOC);
+
+    // Descriptive stats — mean, median and mode of tool prices per category
+    $precosCat = $bd->query("
+        SELECT c.cat_nome, f.fer_preco
+        FROM ferramenta f
+        JOIN categoria c ON f.fer_cat_id = c.cat_id
+        WHERE f.fer_ativa = 1
+        ORDER BY c.cat_nome, f.fer_preco
+    ")->fetchAll(PDO::FETCH_ASSOC);
+
+    $estatPorCat = [];
+    foreach ($precosCat as $row) {
+        $estatPorCat[$row['cat_nome']][] = (float)$row['fer_preco'];
+    }
+
+    $estatDescritiva = [];
+    foreach ($estatPorCat as $cat => $precos) {
+        $n     = count($precos);
+        $media = round(array_sum($precos) / $n, 2);
+
+        sort($precos);
+        $meio    = (int)floor($n / 2);
+        $mediana = $n % 2 === 0
+            ? round(($precos[$meio - 1] + $precos[$meio]) / 2, 2)
+            : round($precos[$meio], 2);
+
+        $freq    = array_count_values(array_map(fn($p) => number_format($p, 2), $precos));
+        arsort($freq);
+        $maxFreq = reset($freq);
+        $modas   = array_keys(array_filter($freq, fn($f) => $f === $maxFreq));
+        $moda    = $maxFreq > 1 ? implode(', ', $modas) . '€' : 'N/A';
+
+        $estatDescritiva[] = [
+            'cat'     => $cat,
+            'n'       => $n,
+            'media'   => $media,
+            'mediana' => $mediana,
+            'moda'    => $moda,
+            'min'     => round(min($precos), 2),
+            'max'     => round(max($precos), 2),
+        ];
+    }
+
+    // Boxplot data — Q1, median, Q3, whiskers and outliers per category
+    $boxplotData = [];
+    foreach ($estatPorCat as $cat => $precos) {
+        sort($precos);
+        $n    = count($precos);
+        $meio = (int)floor($n / 2);
+
+        $mediana = $n % 2 === 0
+            ? ($precos[$meio - 1] + $precos[$meio]) / 2
+            : $precos[$meio];
+
+        // Q1 and Q3 — handle edge cases for small arrays
+        if ($n < 2) {
+            $q1 = $precos[0];
+            $q3 = $precos[0];
+        } else {
+            $metadeInf = array_slice($precos, 0, $meio);
+            $metadeSup = $n % 2 === 0
+                ? array_slice($precos, $meio)
+                : array_slice($precos, $meio + 1);
+
+            $nInf = count($metadeInf);
+            $nSup = count($metadeSup);
+
+            $q1 = $nInf === 0 ? $precos[0]
+                : ($nInf % 2 === 0
+                    ? ($metadeInf[$nInf / 2 - 1] + $metadeInf[$nInf / 2]) / 2
+                    : $metadeInf[(int)floor($nInf / 2)]);
+
+            $q3 = $nSup === 0 ? $precos[$n - 1]
+                : ($nSup % 2 === 0
+                    ? ($metadeSup[$nSup / 2 - 1] + $metadeSup[$nSup / 2]) / 2
+                    : $metadeSup[(int)floor($nSup / 2)]);
+        }
+
+        $iqr      = $q3 - $q1;
+        $limInf   = $q1 - 1.5 * $iqr;
+        $limSup   = $q3 + 1.5 * $iqr;
+
+        $semOutliers = array_filter($precos, fn($p) => $p >= $limInf && $p <= $limSup);
+        $whiskerInf  = count($semOutliers) > 0 ? min($semOutliers) : $q1;
+        $whiskerSup  = count($semOutliers) > 0 ? max($semOutliers) : $q3;
+        $outliers    = array_values(array_filter($precos, fn($p) => $p < $limInf || $p > $limSup));
+
+        $boxplotData[] = [
+            'cat'      => $cat,
+            'min'      => round($whiskerInf, 2),
+            'q1'       => round($q1, 2),
+            'median'   => round($mediana, 2),
+            'q3'       => round($q3, 2),
+            'max'      => round($whiskerSup, 2),
+            'outliers' => $outliers,
+        ];
+    }
 ?>
 <!DOCTYPE html>
 <html lang="pt">
@@ -276,6 +373,136 @@
                             }
                         });
                     </script>
+                </section>
+
+                <section class="dashboard-section">
+                    <h2 class="section-title">Estatística Descritiva — Preços por Categoria</h2>
+                    <p style="font-size:0.88rem; color:#888; margin-bottom:16px;">Média, mediana e moda dos preços (€/dia) das ferramentas ativas por categoria.</p>
+                    <?php if(empty($estatDescritiva)): ?>
+                        <p class="empty-msg">Sem dados suficientes.</p>
+                    <?php else: ?>
+                        <table class="dash-table">
+                            <thead>
+                                <tr>
+                                    <th>Categoria</th>
+                                    <th>N</th>
+                                    <th>Mínimo</th>
+                                    <th>Máximo</th>
+                                    <th>Média</th>
+                                    <th>Mediana</th>
+                                    <th>Moda</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach($estatDescritiva as $e): ?>
+                                <tr>
+                                    <td><strong><?php echo htmlspecialchars($e['cat']); ?></strong></td>
+                                    <td><?php echo $e['n']; ?></td>
+                                    <td><?php echo $e['min']; ?>€</td>
+                                    <td><?php echo $e['max']; ?>€</td>
+                                    <td><?php echo $e['media']; ?>€</td>
+                                    <td><?php echo $e['mediana']; ?>€</td>
+                                    <td><?php echo $e['moda']; ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php endif; ?>
+                </section>
+
+                <section class="dashboard-section">
+                    <h2 class="section-title">Boxplot — Preços por Categoria</h2>
+                    <p style="font-size:0.88rem; color:#888; margin-bottom:16px;">Distribuição dos preços (€/dia) por categoria. A caixa representa 50% dos dados (Q1 a Q3), a linha central é a mediana, e os pontos fora dos bigodes são outliers.</p>
+                    <?php if(empty($boxplotData)): ?>
+                        <p class="empty-msg">Sem dados suficientes.</p>
+                    <?php else: ?>
+                        <div style="max-width:800px;">
+                            <canvas id="chartBoxplot"></canvas>
+                        </div>
+                        <script>window.boxplotData = <?php echo json_encode($boxplotData); ?>;</script>
+                        <script>
+                        (function() {
+                            var dados  = window.boxplotData;
+                            var labels = dados.map(function(d) { return d.cat; });
+                            var ctx    = document.getElementById('chartBoxplot');
+
+                            var dsWhisker = {
+                                label: 'Bigode',
+                                data: dados.map(function(d) { return { x: d.cat, y: [d.min, d.max] }; }),
+                                backgroundColor: 'rgba(0,0,0,0)',
+                                borderColor: '#888',
+                                borderWidth: 2,
+                                barThickness: 2,
+                                type: 'bar'
+                            };
+
+                            var dsBox = {
+                                label: 'Caixa (Q1-Q3)',
+                                data: dados.map(function(d) { return { x: d.cat, y: [d.q1, d.q3] }; }),
+                                backgroundColor: 'rgba(108, 99, 255, 0.3)',
+                                borderColor: '#6c63ff',
+                                borderWidth: 2,
+                                barThickness: 40,
+                                type: 'bar'
+                            };
+
+                            var dsMedian = {
+                                label: 'Mediana',
+                                data: dados.map(function(d) { return { x: d.cat, y: d.median }; }),
+                                backgroundColor: '#6c63ff',
+                                borderColor: '#6c63ff',
+                                pointRadius: 5,
+                                pointStyle: 'rectRot',
+                                type: 'scatter',
+                                showLine: false
+                            };
+
+                            var outlierPoints = [];
+                            dados.forEach(function(d) {
+                                d.outliers.forEach(function(o) {
+                                    outlierPoints.push({ x: d.cat, y: o });
+                                });
+                            });
+
+                            var dsOutliers = {
+                                label: 'Outliers',
+                                data: outlierPoints,
+                                backgroundColor: '#e74c3c',
+                                borderColor: '#e74c3c',
+                                pointRadius: 5,
+                                type: 'scatter',
+                                showLine: false
+                            };
+
+                            new Chart(ctx, {
+                                type: 'bar',
+                                data: { labels: labels, datasets: [dsWhisker, dsBox, dsMedian, dsOutliers] },
+                                options: {
+                                    responsive: true,
+                                    plugins: {
+                                        legend: { display: true, position: 'bottom' },
+                                        tooltip: {
+                                            callbacks: {
+                                                label: function(c) {
+                                                    if (Array.isArray(c.raw.y)) {
+                                                        return c.dataset.label + ': ' + c.raw.y[0] + '€ – ' + c.raw.y[1] + '€';
+                                                    }
+                                                    return c.dataset.label + ': ' + (c.raw.y !== undefined ? c.raw.y : c.raw) + '€';
+                                                }
+                                            }
+                                        }
+                                    },
+                                    scales: {
+                                        y: {
+                                            beginAtZero: true,
+                                            ticks: { callback: function(v) { return v + '€'; } }
+                                        }
+                                    }
+                                }
+                            });
+                        })();
+                        </script>
+                    <?php endif; ?>
                 </section>
 
                 <section class="dashboard-section">
