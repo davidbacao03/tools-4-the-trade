@@ -92,8 +92,9 @@
             (SELECT COUNT(*) FROM aluguer)                              AS total_alugueres,
             (SELECT COUNT(*) FROM aluguer WHERE alu_estado = 'Alugado') AS ativos,
             (SELECT COUNT(DISTINCT fer_id) FROM ferramenta WHERE fer_ativa = 1) AS total_fer_ativas,
-            (SELECT COUNT(DISTINCT alu_fer_id) FROM aluguer)                                          AS fer_com_aluguer,
-            (SELECT COUNT(*) FROM (SELECT alu_fer_id FROM aluguer GROUP BY alu_fer_id HAVING COUNT(*) > 1) x) AS fer_mais_uma
+            (SELECT COUNT(*) FROM (SELECT alu_fer_id FROM aluguer WHERE alu_estado = 'Devolvido' GROUP BY alu_fer_id HAVING COUNT(*) = 1) x) AS fer_uma_vez,
+            (SELECT COUNT(*) FROM (SELECT alu_fer_id FROM aluguer WHERE alu_estado = 'Devolvido' GROUP BY alu_fer_id HAVING COUNT(*) > 1) y) AS fer_mais_uma,
+            (SELECT COUNT(*) FROM ferramenta WHERE fer_ativa = 1 AND fer_id NOT IN (SELECT DISTINCT alu_fer_id FROM aluguer WHERE alu_estado = 'Devolvido')) AS fer_nunca
 
     ")->fetch(PDO::FETCH_ASSOC);
 
@@ -203,10 +204,9 @@
 
                     <?php
                         $total   = (int)$stats['total_fer_ativas'];
-                        $comAlu  = min((int)$stats['fer_com_aluguer'], $total);
-                        $semAlu  = max($total - $comAlu, 0);
-                        $taxa    = $total > 0 ? round($comAlu / $total * 100, 1) : 0;
+                        $umaVez  = (int)$stats['fer_uma_vez'];
                         $maisUma = (int)$stats['fer_mais_uma'];
+                        $semAlu  = (int)$stats['fer_nunca'];
                     ?>
                     <div style="display:flex; align-items:center; justify-content:center; gap:32px; margin-top:24px; flex-wrap:wrap;">
                         <div style="width:160px; height:160px; flex-shrink:0;">
@@ -224,19 +224,19 @@
                                 </thead>
                                 <tbody>
                                     <tr>
-                                        <td>Já foram alugadas</td>
-                                        <td><?php echo $comAlu; ?></td>
-                                        <td><?php echo $taxa; ?>%</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Nunca alugadas</td>
-                                        <td><?php echo $semAlu; ?></td>
-                                        <td><?php echo $total > 0 ? round(100 - $taxa, 1) : 0; ?>%</td>
+                                        <td>Alugadas uma vez</td>
+                                        <td><?php echo $umaVez; ?></td>
+                                        <td><?php echo $total > 0 ? round($umaVez / $total * 100, 1) : 0; ?>%</td>
                                     </tr>
                                     <tr>
                                         <td>Alugadas mais de uma vez</td>
                                         <td><?php echo $maisUma; ?></td>
                                         <td><?php echo $total > 0 ? round($maisUma / $total * 100, 1) : 0; ?>%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Nunca alugadas</td>
+                                        <td><?php echo $semAlu; ?></td>
+                                        <td><?php echo $total > 0 ? round($semAlu / $total * 100, 1) : 0; ?>%</td>
                                     </tr>
                                     <tr style="font-weight:600;">
                                         <td>Total</td>
@@ -252,10 +252,10 @@
                         new Chart(document.getElementById('chartConversao'), {
                             type: 'doughnut',
                             data: {
-                                labels: ['Ja alugadas', 'Nunca alugadas', 'Mais de uma vez'],
+                                labels: ['Uma vez', 'Mais de uma vez', 'Nunca alugadas'],
                                 datasets: [{
-                                    data: [<?php echo $comAlu; ?>, <?php echo $semAlu; ?>, <?php echo $maisUma; ?>],
-                                    backgroundColor: ['#43b89c', '#e0e0e0', '#6c63ff'],
+                                    data: [<?php echo $umaVez; ?>, <?php echo $maisUma; ?>, <?php echo $semAlu; ?>],
+                                    backgroundColor: ['#43b89c', '#6c63ff', '#e0e0e0'],
                                     borderWidth: 0
                                 }]
                             },
