@@ -208,7 +208,7 @@
                         $taxa    = $total > 0 ? round($comAlu / $total * 100, 1) : 0;
                         $maisUma = (int)$stats['fer_mais_uma'];
                     ?>
-                    <div style="display:flex; align-items:center; gap:32px; margin-top:24px; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; justify-content:center; gap:32px; margin-top:24px; flex-wrap:wrap;">
                         <div style="width:160px; height:160px; flex-shrink:0;">
                             <canvas id="chartConversao"></canvas>
                         </div>
