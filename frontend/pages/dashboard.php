@@ -98,6 +98,20 @@
     $ativos->execute([$uid]);
     $meusAlugueres = $ativos->fetchAll(PDO::FETCH_ASSOC);
 
+    // Revenue by month (all time, for chart filtering in JS)
+    $receitaStmt = $bd->prepare(
+        "SELECT DATE_FORMAT(a.alu_criado, '%Y-%m') AS mes,
+                ROUND(SUM(DATEDIFF(a.alu_fim, a.alu_inicio) * f.fer_preco), 2) AS receita
+         FROM aluguer a
+         JOIN ferramenta f ON a.alu_fer_id = f.fer_id
+         WHERE f.fer_utl_id = ? AND a.alu_estado = 'Devolvido'
+         GROUP BY mes
+         ORDER BY mes ASC"
+    );
+    $receitaStmt->execute([$uid]);
+    $receitaMes = $receitaStmt->fetchAll(PDO::FETCH_ASSOC);
+    $receitaTotal = array_sum(array_column($receitaMes, 'receita'));
+
     // My rental history
     $hist = $bd->prepare(
         "SELECT a.alu_id, a.alu_fer_id, a.alu_inicio, a.alu_fim, a.alu_devolvido, a.alu_estado,
@@ -168,6 +182,138 @@
                             <div class="stat-num"><?php echo $cntMeusAtivos; ?></div>
                         </div>
                     </div>
+                </section>
+
+                <!-- Revenue chart -->
+                <section class="dashboard-section">
+                    <h2 class="section-title">Receita gerada pelas minhas ferramentas</h2>
+                    <?php if(empty($receitaMes)): ?>
+                        <p class="empty-msg">Ainda não geraste receita.</p>
+                    <?php else: ?>
+                        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                            <div style="display:flex; gap:8px;">
+                                <button class="simple-button btn-receita-filtro" data-filtro="mes"   style="font-size:0.82rem; padding:5px 12px; background:#888;">Último mês</button>
+                                <button class="simple-button btn-receita-filtro" data-filtro="ano"   style="font-size:0.82rem; padding:5px 12px; background:#888;">Último ano</button>
+                                <button class="simple-button btn-receita-filtro" data-filtro="tudo"  style="font-size:0.82rem; padding:5px 12px;">Desde sempre</button>
+                            </div>
+                            <div id="receitaTotalLabel" style="font-size:0.95rem; font-weight:600; color:#43b89c;"></div>
+                        </div>
+                        <div style="max-width:700px;">
+                            <canvas id="chartReceita"></canvas>
+                        </div>
+                        <script>window.receitaDados = <?php echo json_encode($receitaMes); ?>;</script>
+                        <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+                        <script>
+                            (function () {
+                                var dados   = window.receitaDados || [];
+                                var ctx     = document.getElementById('chartReceita');
+                                var totalEl = document.getElementById('receitaTotalLabel');
+                                var chart   = null;
+                                var filtroAtivo = 'tudo';
+
+                                function mesStr(ano, mes) {
+                                    return ano + '-' + String(mes).padStart(2, '0');
+                                }
+
+                                function gerarMeses(inicio, fim) {
+                                    var meses = [];
+                                    var ano = parseInt(inicio.split('-')[0]);
+                                    var mes = parseInt(inicio.split('-')[1]);
+                                    var anoFim = parseInt(fim.split('-')[0]);
+                                    var mesFim = parseInt(fim.split('-')[1]);
+                                    while (ano < anoFim || (ano === anoFim && mes <= mesFim)) {
+                                        meses.push(mesStr(ano, mes));
+                                        mes++;
+                                        if (mes > 12) { mes = 1; ano++; }
+                                    }
+                                    return meses;
+                                }
+
+                                function filtrar(filtro) {
+                                    var agora    = new Date();
+                                    var anoAtual = agora.getFullYear();
+                                    var mesAtual = agora.getMonth() + 1;
+                                    var hoje     = mesStr(anoAtual, mesAtual);
+
+                                    var inicio, fim;
+                                    if (filtro === 'mes') {
+                                        inicio = hoje;
+                                        fim    = hoje;
+                                    } else if (filtro === 'ano') {
+                                        var umAnoAtras = new Date(agora);
+                                        umAnoAtras.setFullYear(umAnoAtras.getFullYear() - 1);
+                                        inicio = mesStr(umAnoAtras.getFullYear(), umAnoAtras.getMonth() + 1);
+                                        fim    = hoje;
+                                    } else {
+                                        if (dados.length === 0) return { labels: [], values: [] };
+                                        inicio = dados[0].mes;
+                                        fim    = hoje;
+                                    }
+
+                                    var mapeado = {};
+                                    dados.forEach(function (r) { mapeado[r.mes] = parseFloat(r.receita); });
+
+                                    var meses = gerarMeses(inicio, fim);
+                                    return {
+                                        labels: meses,
+                                        values: meses.map(function (m) { return mapeado[m] || 0; })
+                                    };
+                                }
+
+                                function renderChart(filtro) {
+                                    var resultado = filtrar(filtro);
+                                    var labels = resultado.labels;
+                                    var values = resultado.values;
+                                    var total  = values.reduce(function (a, b) { return a + b; }, 0);
+                                    totalEl.textContent = 'Total: ' + total.toFixed(2) + '€';
+
+                                    if (chart) {
+                                        chart.data.labels = labels;
+                                        chart.data.datasets[0].data = values;
+                                        chart.update();
+                                    } else {
+                                        chart = new Chart(ctx, {
+                                            type: 'bar',
+                                            data: {
+                                                labels: labels,
+                                                datasets: [{
+                                                    label: 'Receita (€)',
+                                                    data: values,
+                                                    backgroundColor: '#43b89c',
+                                                    borderRadius: 4
+                                                }]
+                                            },
+                                            options: {
+                                                responsive: true,
+                                                plugins: { legend: { display: false } },
+                                                scales: {
+                                                    y: {
+                                                        beginAtZero: true,
+                                                        ticks: {
+                                                            callback: function (v) { return v + '€'; }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        });
+                                    }
+
+                                    document.querySelectorAll('.btn-receita-filtro').forEach(function (btn) {
+                                        btn.style.background = btn.dataset.filtro === filtro ? '' : '#888';
+                                    });
+                                }
+
+                                document.querySelectorAll('.btn-receita-filtro').forEach(function (btn) {
+                                    btn.addEventListener('click', function () {
+                                        filtroAtivo = btn.dataset.filtro;
+                                        renderChart(filtroAtivo);
+                                    });
+                                });
+
+                                renderChart(filtroAtivo);
+                            })();
+                        </script>
+                    <?php endif; ?>
                 </section>
 
                 <!-- Tool usage tracker -->
