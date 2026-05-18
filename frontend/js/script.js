@@ -176,6 +176,8 @@ if (modalOverlay) {
                     donoAvatar.classList.toggle('dono-avatar-empty', !donoFoto);
                     var avgNotaDono = parseFloat(btn.dataset.avgNotaDono);
                     document.getElementById('modalDonoStars').innerHTML = !isNaN(avgNotaDono) ? renderStarsHtml(avgNotaDono) + ' <small>' + avgNotaDono.toFixed(1) + '</small>' : '';
+                    var donoId = btn.dataset.donoId;
+                    donoCard.href = donoId ? 'utilizador.php?id=' + donoId : '#';
                     donoCard.style.display = '';
                 } else {
                     donoCard.style.display = 'none';
@@ -265,6 +267,7 @@ window.abrirModalFerramenta = function (id) {
             donoAvatar.classList.toggle('dono-avatar-empty', !f.dono_foto);
             var avgNotaDono = parseFloat(f.avg_nota_dono);
             document.getElementById('modalDonoStars').innerHTML = !isNaN(avgNotaDono) ? renderStarsHtml(avgNotaDono) + ' <small>' + avgNotaDono.toFixed(1) + '</small>' : '';
+            donoCard.href = f.fer_utl_id ? 'utilizador.php?id=' + f.fer_utl_id : '#';
             donoCard.style.display = '';
         } else {
             donoCard.style.display = 'none';
@@ -786,6 +789,7 @@ function renderToolCard(f) {
     verBtn.dataset.donoNome      = f.dono_nome || '';
     verBtn.dataset.donoFoto      = f.dono_foto || '';
     verBtn.dataset.avgNotaDono   = f.avg_nota_dono || '';
+    verBtn.dataset.donoId        = f.fer_utl_id || '';
     verBtn.dataset.favorito      = isFav ? '1' : '0';
     verBtn.dataset.imagens       = JSON.stringify(f.img_principal ? [f.img_principal] : []);
     card.appendChild(verBtn);

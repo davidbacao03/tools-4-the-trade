@@ -33,7 +33,7 @@ if (!empty($_GET['disponivel'])) {
 
 $whereStr = implode(' AND ', $where);
 $stmt = $bd->prepare(
-    "SELECT f.fer_id, f.fer_nome, f.fer_descricao, f.fer_preco, f.fer_preco_base,
+    "SELECT f.fer_id, f.fer_utl_id, f.fer_nome, f.fer_descricao, f.fer_preco, f.fer_preco_base,
             f.fer_lat, f.fer_lng, f.fer_desconto_dias, f.fer_preco_desconto, c.cat_nome,
             u.utl_nome AS dono_nome, u.utl_foto AS dono_foto,
             (SELECT COUNT(*) FROM aluguer a WHERE a.alu_fer_id = f.fer_id AND a.alu_estado IN ('Reservado','Alugado')) > 0 AS ocupada,

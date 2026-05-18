@@ -15,7 +15,7 @@
 	$favIds = array_flip($favStmt->fetchAll(PDO::FETCH_COLUMN));
 
 	// Top 10 most rented
-	$q = "SELECT f.fer_id, f.fer_nome, f.fer_descricao, f.fer_preco, f.fer_preco_base,
+	$q = "SELECT f.fer_id, f.fer_utl_id, f.fer_nome, f.fer_descricao, f.fer_preco, f.fer_preco_base,
 	             f.fer_lat, f.fer_lng, f.fer_desconto_dias, f.fer_preco_desconto, c.cat_nome,
 	             u.utl_nome AS dono_nome, u.utl_foto AS dono_foto,
 	             (SELECT COUNT(*) FROM aluguer a WHERE a.alu_fer_id = f.fer_id AND a.alu_estado IN ('Reservado','Alugado')) > 0 AS ocupada,
@@ -74,7 +74,7 @@
 	}
 	$whereStr = implode(' AND ', $where);
 	$stmtAll = $bd->prepare(
-		"SELECT f.fer_id, f.fer_nome, f.fer_descricao, f.fer_preco, f.fer_preco_base,
+		"SELECT f.fer_id, f.fer_utl_id, f.fer_nome, f.fer_descricao, f.fer_preco, f.fer_preco_base,
 		        f.fer_lat, f.fer_lng, f.fer_desconto_dias, f.fer_preco_desconto, c.cat_nome,
 		        u.utl_nome AS dono_nome, u.utl_foto AS dono_foto,
 		        (SELECT COUNT(*) FROM aluguer a WHERE a.alu_fer_id = f.fer_id AND a.alu_estado IN ('Reservado','Alugado')) > 0 AS ocupada,
@@ -179,6 +179,7 @@
                                         data-dono-nome="<?php echo htmlspecialchars($f['dono_nome'] ?? '', ENT_QUOTES); ?>"
                                         data-dono-foto="<?php echo htmlspecialchars($f['dono_foto'] ?? '', ENT_QUOTES); ?>"
                                         data-avg-nota-dono="<?php echo $f['avg_nota_dono'] ?? ''; ?>"
+                                        data-dono-id="<?php echo $f['fer_utl_id']; ?>"
                                         data-favorito="<?php echo $isFav ? '1' : '0'; ?>"
                                         data-imagens="<?php echo htmlspecialchars(json_encode($imgs), ENT_QUOTES); ?>">Ver mais</button>
                                 </article>
@@ -250,6 +251,7 @@
                                         data-dono-nome="<?php echo htmlspecialchars($f['dono_nome'] ?? '', ENT_QUOTES); ?>"
                                         data-dono-foto="<?php echo htmlspecialchars($f['dono_foto'] ?? '', ENT_QUOTES); ?>"
                                         data-avg-nota-dono="<?php echo $f['avg_nota_dono'] ?? ''; ?>"
+                                        data-dono-id="<?php echo $f['fer_utl_id']; ?>"
                                         data-favorito="<?php echo $isFav ? '1' : '0'; ?>"
                                         data-imagens="<?php echo htmlspecialchars(json_encode($f['img_principal'] ? [$f['img_principal']] : []), ENT_QUOTES); ?>">Ver mais</button>
                                 </article>
@@ -265,7 +267,10 @@
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal-box">
             <button class="modal-close" id="modalClose">&times;</button>
-            <h2 id="modalNome"></h2>
+            <div class="modal-title-row">
+                <h2 id="modalNome"></h2>
+                <span id="modalIndisponivel" class="badge-indisponivel" style="display:none;">Indisponível</span>
+            </div>
             <div class="modal-galeria" id="modalGaleria">
                 <img id="modalImgMain" class="modal-img-main" src="" alt="">
                 <div id="modalImgThumbs" class="modal-img-thumbs"></div>
@@ -275,18 +280,17 @@
             <div class="modal-field"><span class="modal-label">Preço:</span><span id="modalPrecoBase"></span>€/dia</div>
             <div class="modal-field" id="modalDescontoRow" style="display:none;"><span class="modal-label">Desconto:</span><span id="modalDescontoTxt"></span></div>
             <div class="modal-field" id="modalRatingRow" style="display:none;"><span class="modal-label">Avaliação:</span><span id="modalRatingStars"></span><span id="modalRatingCount" style="font-size:0.82rem;color:#999;margin-left:6px;"></span></div>
-            <div class="dono-card" id="modalDonoCard" style="display:none;">
+            <a href="#" class="dono-card dono-card-link" id="modalDonoCard" style="display:none;">
                 <div class="dono-avatar" id="modalDonoAvatar"></div>
                 <div class="dono-info">
                     <span class="dono-nome" id="modalDonoNome"></span>
                     <span class="dono-stars" id="modalDonoStars"></span>
                 </div>
-            </div>
+            </a>
             <div class="modal-actions">
                 <a href="#" id="modalAlugarLink" class="simple-button">Alugar</a>
                 <button type="button" id="modalFavBtn" class="btn-favorito-modal">♡ Favorito</button>
                 <button type="button" id="modalReportBtn" class="btn-reportar">⚑ Reportar</button>
-                <span id="modalIndisponivel" class="badge-indisponivel" style="display:none;">Indisponível</span>
             </div>
         </div>
     </div>

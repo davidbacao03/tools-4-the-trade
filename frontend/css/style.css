@@ -171,6 +171,14 @@ body {
     position: relative;
 }
 .modal-box h2 { margin-top: 0; }
+.modal-title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 0;
+}
+.modal-title-row h2 { margin-bottom: 0; }
 .modal-close {
     position: absolute;
     top: 14px;
@@ -495,13 +503,16 @@ body {
 .estado-Devolvido  { background: #d4edda; color: #155724; }
 .estado-Disponivel { background: #e9ecef; color: #495057; }
 .estado-select {
-    border-radius: 12px;
-    border: none;
-    padding: 3px 10px;
-    font-size: 0.8rem;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.18);
+    padding: 5px 28px 5px 11px;
+    font-size: 0.82rem;
     font-weight: bold;
     cursor: pointer;
     appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(0,0,0,0.35)'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 9px center;
 }
 
 .profile-table {
@@ -1193,4 +1204,261 @@ body.auth-layout {
     font-size: 0.88rem;
     color: #444;
     line-height: 1.5;
+}
+
+/* Review row with tool image on the left (user profile page) */
+.review-item-tool {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.review-tool-thumb {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid #eee;
+    display: block;
+}
+
+.review-tool-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.review-tool-thumb-empty {
+    width: 100%;
+    height: 100%;
+    background: #e9ecef;
+}
+
+.review-item-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.review-item-tool .review-tool-name {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: #222 !important;
+    text-decoration: none !important;
+}
+
+.review-item-tool .review-tool-name:hover {
+    color: #555 !important;
+}
+
+/* Reviewer avatar circle in reviews */
+.reviewer-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #ddd;
+    background-size: cover;
+    background-position: center;
+    flex-shrink: 0;
+}
+
+.reviewer-avatar-empty {
+    background-color: #ccc;
+}
+
+/* Clickable dono-card (owner profile link) */
+a.dono-card-link {
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+a.dono-card-link:hover {
+    background: #efefef;
+    border-color: #ddd;
+}
+
+/* Non-editable avatar on public profile pages */
+.profile-avatar-static {
+    cursor: default;
+}
+
+.profile-avatar-static:hover .avatar-edit-overlay {
+    opacity: 0;
+}
+
+/* --------------------------------------------------------
+   Report button
+   -------------------------------------------------------- */
+
+.btn-reportar {
+    background: #fff;
+    color: #888;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 8px 16px;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+}
+.btn-reportar:hover { color: #c0392b; border-color: #c0392b; }
+
+/* --------------------------------------------------------
+   Mobile — tables scroll inside their container
+   -------------------------------------------------------- */
+
+@media (max-width: 768px) {
+    /* Tables get a horizontal scrollbar inside their section,
+       not a page-wide overflow */
+    .dash-table,
+    .profile-table {
+        display: block;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Cells keep a minimum width so content stays legible */
+    .dash-table th,
+    .dash-table td,
+    .profile-table th,
+    .profile-table td {
+        min-width: 80px;
+    }
+
+    /* Filter bar: stack inputs vertically and go full-width */
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .filter-bar select,
+    .filter-bar input[type="text"],
+    .filter-bar input[type="number"],
+    .filter-bar input[type="search"],
+    .filter-bar input[type="date"] {
+        width: 100%;
+    }
+
+    /* Auth card fits narrow screens */
+    .auth-layout > div {
+        width: 90vw;
+        max-width: 400px;
+    }
+
+    /* Section padding: a little tighter */
+    .hero,
+    .map-section,
+    .tools-section,
+    .form-section,
+    .dashboard-section {
+        padding: 14px;
+    }
+
+    .main-area {
+        padding: 14px;
+    }
+
+    /* Modal: never wider than viewport, scrollable if tall */
+    .modal-box {
+        padding: 20px;
+        max-width: 95vw;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+}
+
+/* --------------------------------------------------------
+   Mobile — narrow screens (≤ 480 px)
+   -------------------------------------------------------- */
+
+@media (max-width: 480px) {
+    /* Sidebar becomes a compact horizontal strip */
+    .sidebar {
+        padding: 10px 16px;
+    }
+    .logo {
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+    .menu {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0;
+    }
+    .menu a {
+        padding: 8px 10px;
+        margin-bottom: 0;
+        font-size: 0.85rem;
+    }
+
+    /* Less padding everywhere */
+    .main-area {
+        padding: 10px;
+    }
+    .hero,
+    .map-section,
+    .tools-section,
+    .form-section,
+    .dashboard-section {
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+
+    /* Sections containing wide grids (calendar, etc.) scroll inside */
+    .form-section,
+    .dashboard-section {
+        overflow-x: auto;
+    }
+
+    /* Ensure the 7-column calendar has a minimum width so day labels
+       are readable; the section overflow-x:auto handles the scroll */
+    .cal-head,
+    .cal-days,
+    .cal-strips {
+        min-width: 280px;
+    }
+
+    /* Stat numbers slightly smaller */
+    .stat-box .stat-num,
+    .stat-box-accent .stat-num {
+        font-size: 1.6rem;
+    }
+
+    /* Table cells: smaller font to pack more in */
+    .dash-table th,
+    .dash-table td,
+    .profile-table th,
+    .profile-table td {
+        font-size: 0.8rem;
+        padding: 8px 8px;
+    }
+
+    /* Modal: almost full-screen */
+    .modal-box {
+        width: 95vw;
+        padding: 16px;
+    }
+
+    /* Topbar: search box full-width (already done at 600px, keep for 480) */
+    .search-box {
+        width: 100%;
+    }
+    .search-box input {
+        width: 100%;
+    }
+
+    /* Tool cards: 1 column already at 600px — just reduce inner padding */
+    .tool-card {
+        padding: 12px;
+    }
+
+    /* Rental grid already 1-col at 700px */
+
+    /* Review rows on very small screens: stack thumbnail above text */
+    .review-item-tool {
+        flex-wrap: wrap;
+    }
 }

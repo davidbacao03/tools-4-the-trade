@@ -177,7 +177,7 @@
                                 <span class="info-label">Preço:</span><?php echo number_format($f['fer_preco_base'], 2); ?>€/dia
                             </div>
                             <?php if(!empty($f['dono_nome'])): ?>
-                            <div class="dono-card">
+                            <a href="utilizador.php?id=<?php echo $f['fer_utl_id']; ?>" class="dono-card dono-card-link">
                                 <?php if(!empty($f['dono_foto'])): ?>
                                 <div class="dono-avatar" style="background-image:url('<?php echo htmlspecialchars($f['dono_foto']); ?>')"></div>
                                 <?php else: ?>
@@ -189,7 +189,7 @@
                                     <span class="dono-stars"><span class="stars-display" data-nota="<?php echo $f['avg_nota_dono']; ?>"></span> <small><?php echo $f['avg_nota_dono']; ?></small></span>
                                     <?php endif; ?>
                                 </div>
-                            </div>
+                            </a>
                             <?php endif; ?>
 
                             <?php if($f['fer_lat'] !== null && $f['fer_lng'] !== null): ?>
