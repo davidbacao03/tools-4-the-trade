@@ -664,6 +664,7 @@
                                 <th>ID</th>
                                 <th>Ferramenta</th>
                                 <th>Reportado por</th>
+                                <th>Dono da ferramenta</th>
                                 <th>Motivo</th>
                                 <th>Descrição</th>
                                 <th>Data</th>
@@ -672,7 +673,7 @@
                             </tr>
                         </thead>
                         <tbody id="reportsTbody">
-                            <tr><td colspan="8" style="text-align:center; color:#aaa;">A carregar...</td></tr>
+                            <tr><td colspan="9" style="text-align:center; color:#aaa;">A carregar...</td></tr>
                         </tbody>
                     </table>
                 </section>

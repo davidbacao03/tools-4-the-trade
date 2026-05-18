@@ -71,10 +71,13 @@ $whereStr = $where ? 'WHERE ' . implode(' AND ', $where) : '';
 
 $stmt = $bd->prepare(
     "SELECT d.den_id, d.den_motivo, d.den_descricao, d.den_estado, d.den_criada,
-            f.fer_id, f.fer_nome, u.utl_nome AS reporter
+            f.fer_id, f.fer_nome,
+            u.utl_id AS reporter_id, u.utl_nome AS reporter,
+            o.utl_id AS dono_id,    o.utl_nome AS dono_nome
      FROM denuncia d
      JOIN ferramenta f ON d.den_fer_id = f.fer_id
      JOIN utilizador u ON d.den_utl_id = u.utl_id
+     JOIN utilizador o ON f.fer_utl_id = o.utl_id
      $whereStr
      ORDER BY d.den_criada DESC"
 );
