@@ -416,6 +416,10 @@
                     <?php if(empty($boxplotData)): ?>
                         <p class="empty-msg">Sem dados suficientes.</p>
                     <?php else: ?>
+                        <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px; flex-wrap:wrap;">
+                            <button id="btnToggleOutliers" class="simple-button" style="font-size:0.82rem; padding:5px 12px;">Esconder outliers</button>
+                            <span id="outliersInfo" style="font-size:0.85rem; color:#888;"></span>
+                        </div>
                         <div style="max-width:800px;">
                             <canvas id="chartBoxplot"></canvas>
                         </div>
@@ -425,6 +429,7 @@
                             var dados  = window.boxplotData;
                             var labels = dados.map(function(d) { return d.cat; });
                             var ctx    = document.getElementById('chartBoxplot');
+                            var mostrarOutliers = true;
 
                             var dsWhisker = {
                                 label: 'Bigode',
@@ -476,7 +481,7 @@
                                 xAxisID: 'x'
                             };
 
-                            new Chart(ctx, {
+                            var chart = new Chart(ctx, {
                                 type: 'bar',
                                 data: { labels: labels, datasets: [dsWhisker, dsBox, dsMedian, dsOutliers] },
                                 options: {
@@ -504,6 +509,23 @@
                                     }
                                 }
                             });
+
+                            // Update outliers info
+                            function renderOutliersTable() {
+                                var total = outlierPoints.length;
+                                var info = document.getElementById('outliersInfo');
+                                info.textContent = total === 0 ? 'Nenhum outlier encontrado.' : total + ' outlier' + (total > 1 ? 's' : '') + ' encontrado' + (total > 1 ? 's' : '') + '.';
+                            }
+
+                            // Toggle button
+                            document.getElementById('btnToggleOutliers').addEventListener('click', function() {
+                                mostrarOutliers = !mostrarOutliers;
+                                this.textContent = mostrarOutliers ? 'Esconder outliers' : 'Mostrar outliers';
+                                chart.data.datasets[3].data = mostrarOutliers ? outlierPoints : [];
+                                chart.update();
+                            });
+
+                            renderOutliersTable();
                         })();
                         </script>
                     <?php endif; ?>
