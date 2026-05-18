@@ -286,7 +286,7 @@ window.abrirModalFerramenta = function (id) {
 
 // Home page map — reads tool data set by index.php via window.ferramentasGeo
 if (typeof L !== 'undefined' && window.ferramentasGeo && document.querySelector('.map-section #mapa')) {
-    var homeMap = L.map('mapa').setView([38.72, -9.14], 10);
+    var homeMap = L.map('mapa', { scrollWheelZoom: false }).setView([38.72, -9.14], 10);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(homeMap);
@@ -313,7 +313,7 @@ if (typeof L !== 'undefined' && document.querySelector('.form-section #mapa')) {
     var existLat = mapDiv.dataset.lat ? parseFloat(mapDiv.dataset.lat) : null;
     var existLng = mapDiv.dataset.lng ? parseFloat(mapDiv.dataset.lng) : null;
 
-    var formMap = L.map('mapa').setView([39.5, -8.0], 7);
+    var formMap = L.map('mapa', { scrollWheelZoom: false }).setView([39.5, -8.0], 7);
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     }).addTo(formMap);

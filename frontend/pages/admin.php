@@ -376,7 +376,7 @@
                 </section>
 
                 <section class="dashboard-section">
-                    <h2 class="section-title">Estatística Descritiva — Preços por Categoria</h2>
+                    <h2 class="section-title">Estatística Descritiva - Preços por Categoria</h2>
                     <p style="font-size:0.88rem; color:#888; margin-bottom:16px;">Média, mediana e moda dos preços (€/dia) das ferramentas ativas por categoria.</p>
                     <?php if(empty($estatDescritiva)): ?>
                         <p class="empty-msg">Sem dados suficientes.</p>
@@ -411,7 +411,7 @@
                 </section>
 
                 <section class="dashboard-section">
-                    <h2 class="section-title">Boxplot — Preços por Categoria</h2>
+                    <h2 class="section-title">Boxplot - Preços por Categoria</h2>
                     <p style="font-size:0.88rem; color:#888; margin-bottom:16px;">Distribuição dos preços (€/dia) por categoria. A caixa representa 50% dos dados (Q1 a Q3), a linha central é a mediana, e os pontos fora dos bigodes são outliers.</p>
                     <?php if(empty($boxplotData)): ?>
                         <p class="empty-msg">Sem dados suficientes.</p>
@@ -454,7 +454,8 @@
                                 pointRadius: 5,
                                 pointStyle: 'rectRot',
                                 type: 'scatter',
-                                showLine: false
+                                showLine: false,
+                                xAxisID: 'x'
                             };
 
                             var outlierPoints = [];
@@ -471,13 +472,15 @@
                                 borderColor: '#e74c3c',
                                 pointRadius: 5,
                                 type: 'scatter',
-                                showLine: false
+                                showLine: false,
+                                xAxisID: 'x'
                             };
 
                             new Chart(ctx, {
                                 type: 'bar',
                                 data: { labels: labels, datasets: [dsWhisker, dsBox, dsMedian, dsOutliers] },
                                 options: {
+                                    grouped: false,
                                     responsive: true,
                                     plugins: {
                                         legend: { display: true, position: 'bottom' },
@@ -493,6 +496,7 @@
                                         }
                                     },
                                     scales: {
+                                        x: { type: 'category' },
                                         y: {
                                             beginAtZero: true,
                                             ticks: { callback: function(v) { return v + '€'; } }
