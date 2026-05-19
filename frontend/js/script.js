@@ -1060,7 +1060,8 @@ if (reportFilterForm) {
         tr.innerHTML =
             '<td>' + r.den_id + '</td>' +
             '<td><a href="alugarferramenta.php?id=' + r.fer_id + '" style="color:inherit;">' + r.fer_nome + '</a></td>' +
-            '<td>' + r.reporter + '</td>' +
+            '<td><a href="utilizador.php?id=' + r.reporter_id + '" style="color:inherit;">' + r.reporter + '</a></td>' +
+            '<td><a href="utilizador.php?id=' + r.dono_id + '" style="color:inherit;">' + r.dono_nome + '</a></td>' +
             '<td>' + r.den_motivo + '</td>' +
             '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + (r.den_descricao || '') + '">' + (r.den_descricao || '—') + '</td>' +
             '<td>' + data + '</td>' +
