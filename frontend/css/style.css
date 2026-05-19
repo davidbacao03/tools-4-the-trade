@@ -311,7 +311,8 @@ body {
     background-color: #000000;
 }
 
-.tool-card:hover button {
+.tool-card:hover button,
+.tool-card:hover a.simple-button {
     background-color: #1B5E20;
 }
 
