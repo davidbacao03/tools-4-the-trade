@@ -26,7 +26,7 @@
 	      FROM ferramenta f
 	      JOIN categoria c ON f.fer_cat_id = c.cat_id
 	      JOIN utilizador u ON f.fer_utl_id = u.utl_id
-	      WHERE f.fer_ativa = 1
+	      WHERE f.fer_ativa = 1 AND f.fer_utl_id != {$_SESSION['utl_id']}
 	      ORDER BY total_alugueres DESC
 	      LIMIT 10";
 	$ferramentas = $bd->query($q)->fetchAll(PDO::FETCH_ASSOC);
@@ -51,8 +51,8 @@
 	$cats = $bd->query("SELECT * FROM categoria ORDER BY cat_nome")->fetchAll(PDO::FETCH_ASSOC);
 
 	// All tools with filters
-	$where  = ["f.fer_ativa = 1"];
-	$params = [];
+	$where  = ["f.fer_ativa = 1", "f.fer_utl_id != ?"];
+	$params = [(int)$_SESSION['utl_id']];
 	$showFavoritos = isset($_GET['cat']) && $_GET['cat'] === 'favoritos';
 	if($showFavoritos) {
 		$where[]  = "f.fer_id IN (SELECT fav_fer_id FROM favorito WHERE fav_utl_id = ?)";
@@ -150,7 +150,7 @@
                                 $mainImg = $imgs[0] ?? null;
                                 $isFav = isset($favIds[$f['fer_id']]);
                             ?>
-                                <article class="tool-card"
+                                <article class="tool-card<?php echo $f['ocupada'] ? ' ocupada' : ''; ?>"
                                     data-lat="<?php echo $f['fer_lat'] !== null ? (float)$f['fer_lat'] : ''; ?>"
                                     data-lng="<?php echo $f['fer_lng'] !== null ? (float)$f['fer_lng'] : ''; ?>">
                                     <?php if($mainImg): ?>
@@ -158,9 +158,12 @@
                                     <?php else: ?>
                                         <div class="tool-card-img-placeholder"></div>
                                     <?php endif; ?>
-                                    <h3><?php echo htmlspecialchars($f['fer_nome']); ?></h3>
-                                    <p>Categoria: <?php echo htmlspecialchars($f['cat_nome']); ?></p>
-                                    <p><?php echo number_format($f['fer_preco'], 2); ?>€/dia</p>
+                                    <div class="tool-card-body">
+                                        <h3><?php echo htmlspecialchars($f['fer_nome']); ?></h3>
+                                        <p>Categoria: <?php echo htmlspecialchars($f['cat_nome']); ?></p>
+                                        <p class="tool-card-price"><?php echo number_format($f['fer_preco'], 2); ?>€/dia</p>
+                                    </div>
+                                    <div class="tool-card-footer">
                                     <?php if($f['ocupada']): ?>
                                         <span class="badge-indisponivel">Indisponível</span>
                                     <?php endif; ?>
@@ -182,6 +185,7 @@
                                         data-dono-id="<?php echo $f['fer_utl_id']; ?>"
                                         data-favorito="<?php echo $isFav ? '1' : '0'; ?>"
                                         data-imagens="<?php echo htmlspecialchars(json_encode($imgs), ENT_QUOTES); ?>">Ver mais</button>
+                                    </div>
                                 </article>
                             <?php endforeach; ?>
                         <?php endif; ?>
@@ -222,7 +226,7 @@
                             <?php foreach($todasFerramentas as $f):
                                 $isFav = isset($favIds[$f['fer_id']]);
                             ?>
-                                <article class="tool-card"
+                                <article class="tool-card<?php echo $f['ocupada'] ? ' ocupada' : ''; ?>"
                                     data-lat="<?php echo $f['fer_lat'] !== null ? (float)$f['fer_lat'] : ''; ?>"
                                     data-lng="<?php echo $f['fer_lng'] !== null ? (float)$f['fer_lng'] : ''; ?>">
                                     <?php if($f['img_principal']): ?>
@@ -230,9 +234,12 @@
                                     <?php else: ?>
                                         <div class="tool-card-img-placeholder"></div>
                                     <?php endif; ?>
-                                    <h3><?php echo htmlspecialchars($f['fer_nome']); ?></h3>
-                                    <p>Categoria: <?php echo htmlspecialchars($f['cat_nome']); ?></p>
-                                    <p><?php echo number_format($f['fer_preco'], 2); ?>€/dia</p>
+                                    <div class="tool-card-body">
+                                        <h3><?php echo htmlspecialchars($f['fer_nome']); ?></h3>
+                                        <p>Categoria: <?php echo htmlspecialchars($f['cat_nome']); ?></p>
+                                        <p class="tool-card-price"><?php echo number_format($f['fer_preco'], 2); ?>€/dia</p>
+                                    </div>
+                                    <div class="tool-card-footer">
                                     <?php if($f['ocupada']): ?>
                                         <span class="badge-indisponivel">Indisponível</span>
                                     <?php endif; ?>
@@ -254,6 +261,7 @@
                                         data-dono-id="<?php echo $f['fer_utl_id']; ?>"
                                         data-favorito="<?php echo $isFav ? '1' : '0'; ?>"
                                         data-imagens="<?php echo htmlspecialchars(json_encode($f['img_principal'] ? [$f['img_principal']] : []), ENT_QUOTES); ?>">Ver mais</button>
+                                    </div>
                                 </article>
                             <?php endforeach; ?>
                         <?php endif; ?>

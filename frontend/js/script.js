@@ -1,3 +1,12 @@
+// Mark active nav link based on current page filename
+(function () {
+    var page = window.location.pathname.split('/').pop().toLowerCase() || 'index.php';
+    document.querySelectorAll('.menu a').forEach(function (a) {
+        var href = (a.getAttribute('href') || '').split('/').pop().toLowerCase();
+        if (href && href === page) a.classList.add('active');
+    });
+})();
+
 // Search — live filter of .tool-card elements
 var searchInput = document.querySelector('.search-box input');
 if (searchInput) {
@@ -60,8 +69,9 @@ if (grid && navigator.geolocation) {
                     var badge = document.createElement('p');
                     badge.className = 'dist-badge';
                     badge.textContent = formatDist(dist);
-                    var ref = card.querySelector('button, a.simple-button, span.badge-indisponivel');
-                    card.insertBefore(badge, ref || null);
+                    var body = card.querySelector('.tool-card-body');
+                    if (body) body.appendChild(badge);
+                    else card.appendChild(badge);
                 } else {
                     card.dataset.dist = 999999;
                 }
@@ -736,7 +746,7 @@ if (alugarFavBtn) {
 function renderToolCard(f) {
     var isFav = f.is_favorito == 1;
     var card = document.createElement('article');
-    card.className = 'tool-card';
+    card.className = 'tool-card' + (f.ocupada == 1 ? ' ocupada' : '');
     if (f.fer_lat) card.dataset.lat = f.fer_lat;
     if (f.fer_lng) card.dataset.lng = f.fer_lng;
 
@@ -752,23 +762,32 @@ function renderToolCard(f) {
         card.appendChild(ph);
     }
 
+    var body = document.createElement('div');
+    body.className = 'tool-card-body';
+
     var h3 = document.createElement('h3');
     h3.textContent = f.fer_nome;
-    card.appendChild(h3);
+    body.appendChild(h3);
 
     var pCat = document.createElement('p');
     pCat.textContent = 'Categoria: ' + f.cat_nome;
-    card.appendChild(pCat);
+    body.appendChild(pCat);
 
     var pPreco = document.createElement('p');
+    pPreco.className = 'tool-card-price';
     pPreco.textContent = parseFloat(f.fer_preco_base).toFixed(2) + '€/dia';
-    card.appendChild(pPreco);
+    body.appendChild(pPreco);
+
+    card.appendChild(body);
+
+    var footer = document.createElement('div');
+    footer.className = 'tool-card-footer';
 
     if (f.ocupada == 1) {
         var badge = document.createElement('span');
         badge.className = 'badge-indisponivel';
         badge.textContent = 'Indisponível';
-        card.appendChild(badge);
+        footer.appendChild(badge);
     }
 
     var verBtn = document.createElement('button');
@@ -792,7 +811,9 @@ function renderToolCard(f) {
     verBtn.dataset.donoId        = f.fer_utl_id || '';
     verBtn.dataset.favorito      = isFav ? '1' : '0';
     verBtn.dataset.imagens       = JSON.stringify(f.img_principal ? [f.img_principal] : []);
-    card.appendChild(verBtn);
+    footer.appendChild(verBtn);
+
+    card.appendChild(footer);
 
     return card;
 }

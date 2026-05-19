@@ -139,15 +139,18 @@
                         <?php foreach($ferramentas as $f):
                             $isFav = isset($favIds[$f['fer_id']]);
                         ?>
-                        <article class="tool-card">
+                        <article class="tool-card<?php echo $f['ocupada'] ? ' ocupada' : ''; ?>">
                             <?php if($f['img_principal']): ?>
                                 <img src="<?php echo htmlspecialchars($f['img_principal']); ?>" class="tool-card-img" alt="<?php echo htmlspecialchars($f['fer_nome']); ?>">
                             <?php else: ?>
                                 <div class="tool-card-img-placeholder"></div>
                             <?php endif; ?>
-                            <h3><?php echo htmlspecialchars($f['fer_nome']); ?></h3>
-                            <p>Categoria: <?php echo htmlspecialchars($f['cat_nome']); ?></p>
-                            <p><?php echo number_format($f['fer_preco_base'], 2); ?>€/dia</p>
+                            <div class="tool-card-body">
+                                <h3><?php echo htmlspecialchars($f['fer_nome']); ?></h3>
+                                <p>Categoria: <?php echo htmlspecialchars($f['cat_nome']); ?></p>
+                                <p class="tool-card-price"><?php echo number_format($f['fer_preco_base'], 2); ?>€/dia</p>
+                            </div>
+                            <div class="tool-card-footer">
                             <?php if($f['ocupada']): ?>
                                 <span class="badge-indisponivel">Indisponível</span>
                             <?php endif; ?>
