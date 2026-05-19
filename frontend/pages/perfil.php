@@ -71,6 +71,20 @@
     $ferramentasAlugadas->execute([$uid]);
     $minhasAlugadas = $ferramentasAlugadas->fetchAll(PDO::FETCH_ASSOC);
 
+    $reviewStmt = $bd->prepare(
+        "SELECT av.ava_nota_fer, av.ava_texto, av.ava_criada,
+                u.utl_nome AS reviewer, u.utl_foto AS reviewer_foto,
+                f.fer_nome, f.fer_id,
+                (SELECT img_path FROM ferramenta_imagem WHERE img_fer_id = f.fer_id AND img_principal = 1 LIMIT 1) AS fer_img
+         FROM avaliacao av
+         JOIN utilizador u ON av.ava_utl_id = u.utl_id
+         JOIN ferramenta f ON av.ava_fer_id = f.fer_id
+         WHERE f.fer_utl_id = ? AND av.ava_texto IS NOT NULL AND av.ava_texto != ''
+         ORDER BY av.ava_criada DESC"
+    );
+    $reviewStmt->execute([$uid]);
+    $reviews = $reviewStmt->fetchAll(PDO::FETCH_ASSOC);
+
     $alugueres = $bd->prepare(
         "SELECT a.*, f.fer_nome, c.cat_nome FROM aluguer a
          JOIN ferramenta f ON a.alu_fer_id = f.fer_id
@@ -223,6 +237,37 @@
                         </table>
                     <?php endif; ?>
                 </section>
+
+                <?php if(!empty($reviews)): ?>
+                <section class="form-section" style="margin-top:0;">
+                    <h2>Reviews das minhas ferramentas</h2>
+                    <?php foreach($reviews as $r): ?>
+                    <div class="review-item review-item-tool">
+                        <a href="alugarferramenta.php?id=<?php echo $r['fer_id']; ?>" class="review-tool-thumb">
+                            <?php if(!empty($r['fer_img'])): ?>
+                                <img src="<?php echo htmlspecialchars($r['fer_img']); ?>" alt="<?php echo htmlspecialchars($r['fer_nome']); ?>">
+                            <?php else: ?>
+                                <div class="review-tool-thumb-empty"></div>
+                            <?php endif; ?>
+                        </a>
+                        <div class="review-item-body">
+                            <div class="review-header">
+                                <a href="alugarferramenta.php?id=<?php echo $r['fer_id']; ?>" class="review-tool-name"><?php echo htmlspecialchars($r['fer_nome']); ?></a>
+                                <span class="stars-display" data-nota="<?php echo $r['ava_nota_fer']; ?>"></span>
+                                <?php if(!empty($r['reviewer_foto'])): ?>
+                                    <div class="reviewer-avatar" style="background-image:url('<?php echo htmlspecialchars($r['reviewer_foto']); ?>')"></div>
+                                <?php else: ?>
+                                    <div class="reviewer-avatar reviewer-avatar-empty"></div>
+                                <?php endif; ?>
+                                <strong><?php echo htmlspecialchars($r['reviewer']); ?></strong>
+                                <span class="review-date"><?php echo date('d/m/Y', strtotime($r['ava_criada'])); ?></span>
+                            </div>
+                            <p class="review-text"><?php echo htmlspecialchars($r['ava_texto']); ?></p>
+                        </div>
+                    </div>
+                    <?php endforeach; ?>
+                </section>
+                <?php endif; ?>
 
                 <section class="tools-section">
                     <h2>Os meus alugueres</h2>

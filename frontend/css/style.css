@@ -407,6 +407,23 @@ body {
     font-weight: 600;
 }
 
+.badge-inativa {
+    display: inline-block;
+    background-color: #F5F5F5;
+    color: #828282;
+    border: 1px solid #BDBDBD;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.tool-card.inativa .tool-card-img,
+.tool-card.inativa .tool-card-img-placeholder,
+.tool-card.inativa .tool-card-body {
+    opacity: 0.38;
+}
+
 /* Formulário */
 .tool-form {
     display: flex;
