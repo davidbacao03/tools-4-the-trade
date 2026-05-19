@@ -66,21 +66,25 @@
                             <p class="empty-msg">Ainda não adicionaste nenhuma ferramenta. <a href="adicionarferramentas.php">Adiciona a primeira!</a></p>
                         <?php else: ?>
                             <?php foreach($minhasFerramentas as $f): ?>
-                                <article class="tool-card">
+                                <article class="tool-card<?php echo $f['ocupada'] ? ' ocupada' : ''; ?>">
                                     <?php if($f['img_principal']): ?>
                                         <img src="<?php echo htmlspecialchars($f['img_principal']); ?>" class="tool-card-img" alt="<?php echo htmlspecialchars($f['fer_nome']); ?>">
                                     <?php else: ?>
                                         <div class="tool-card-img-placeholder"></div>
                                     <?php endif; ?>
-                                    <h3><?php echo htmlspecialchars($f['fer_nome']); ?></h3>
-                                    <p>Categoria: <?php echo htmlspecialchars($f['cat_nome']); ?></p>
-                                    <p><?php echo number_format($f['fer_preco'], 2); ?>€/dia</p>
-                                    <?php if($f['ocupada']): ?>
-                                        <span class="badge-indisponivel">Alugada</span>
-                                    <?php else: ?>
-                                        <span class="badge-disponivel">Disponível</span>
-                                    <?php endif; ?>
-                                    <a href="editarferramenta.php?id=<?php echo $f['fer_id']; ?>" class="simple-button" style="margin-top:8px;">Editar</a>
+                                    <div class="tool-card-body">
+                                        <h3><?php echo htmlspecialchars($f['fer_nome']); ?></h3>
+                                        <p>Categoria: <?php echo htmlspecialchars($f['cat_nome']); ?></p>
+                                        <p class="tool-card-price"><?php echo number_format($f['fer_preco_base'], 2); ?>€/dia</p>
+                                    </div>
+                                    <div class="tool-card-footer">
+                                        <?php if($f['ocupada']): ?>
+                                            <span class="badge-indisponivel">Alugada</span>
+                                        <?php else: ?>
+                                            <span class="badge-disponivel">Disponível</span>
+                                        <?php endif; ?>
+                                        <a href="editarferramenta.php?id=<?php echo $f['fer_id']; ?>" class="simple-button">Editar</a>
+                                    </div>
                                 </article>
                             <?php endforeach; ?>
                         <?php endif; ?>
