@@ -206,7 +206,7 @@
 
                         <div style="display:flex; gap:12px; margin-top:8px;">
                             <button type="submit">Guardar alterações</button>
-                            <a href="perfil.php" class="simple-button" style="background:#888;">Cancelar</a>
+                            <a href="#" onclick="history.back(); return false;" class="simple-button" style="background:#888;">Cancelar</a>
                         </div>
                     </form>
                 </section>
