@@ -171,14 +171,34 @@
         $modas   = array_keys(array_filter($freq, fn($f) => $f === $maxFreq));
         $moda    = $maxFreq > 1 ? implode(', ', $modas) . '€' : 'N/A';
 
+        // Standard deviation and 95% confidence interval (z = 1.96)
+        $mediaExata = array_sum($precos) / $n;
+        $variancia  = array_sum(array_map(fn($p) => ($p - $mediaExata) ** 2, $precos)) / $n;
+        $desvioPad  = round(sqrt($variancia), 2);
+        $margem     = $n > 1 ? round(1.96 * ($desvioPad / sqrt($n)), 2) : 0;
+        $icInf      = round($media - $margem, 2);
+        $icSup      = round($media + $margem, 2);
+
+        // Standard deviation and 95% confidence interval (z = 1.96)
+        $mediaExata = array_sum($precos) / $n;
+        $variancia  = array_sum(array_map(fn($p) => ($p - $mediaExata) ** 2, $precos)) / $n;
+        $desvioPad  = round(sqrt($variancia), 2);
+        $margem     = $n > 1 ? round(1.96 * ($desvioPad / sqrt($n)), 2) : 0;
+        $icInf      = round($media - $margem, 2);
+        $icSup      = round($media + $margem, 2);
+
         $estatDescritiva[] = [
-            'cat'     => $cat,
-            'n'       => $n,
-            'media'   => $media,
-            'mediana' => $mediana,
-            'moda'    => $moda,
-            'min'     => round(min($precos), 2),
-            'max'     => round(max($precos), 2),
+            'cat'       => $cat,
+            'n'         => $n,
+            'media'     => $media,
+            'mediana'   => $mediana,
+            'moda'      => $moda,
+            'min'       => round(min($precos), 2),
+            'max'       => round(max($precos), 2),
+            'desvio'    => $desvioPad,
+            'ic_inf'    => $icInf,
+            'ic_sup'    => $icSup,
+            'margem'    => $margem,
         ];
     }
 
@@ -377,7 +397,7 @@
 
                 <section class="dashboard-section">
                     <h2 class="section-title">Estatística Descritiva - Preços por Categoria</h2>
-                    <p style="font-size:0.88rem; color:#888; margin-bottom:16px;">Média, mediana e moda dos preços (€/dia) das ferramentas ativas por categoria.</p>
+                    <p style="font-size:0.88rem; color:#888; margin-bottom:16px;">Média, mediana e moda dos preços (€/dia) das ferramentas ativas por categoria. O intervalo de confiança (IC 95%) indica o intervalo onde a média real da população provavelmente se encontra.</p>
                     <?php if(empty($estatDescritiva)): ?>
                         <p class="empty-msg">Sem dados suficientes.</p>
                     <?php else: ?>
@@ -389,6 +409,8 @@
                                     <th>Mínimo</th>
                                     <th>Máximo</th>
                                     <th>Média</th>
+                                    <th>Desvio Padrão</th>
+                                    <th>IC 95%</th>
                                     <th>Mediana</th>
                                     <th>Moda</th>
                                 </tr>
@@ -401,6 +423,15 @@
                                     <td><?php echo $e['min']; ?>€</td>
                                     <td><?php echo $e['max']; ?>€</td>
                                     <td><?php echo $e['media']; ?>€</td>
+                                    <td><?php echo $e['desvio']; ?>€</td>
+                                    <td style="white-space:nowrap;">
+                                        <?php if($e['n'] > 1): ?>
+                                            <?php echo $e['ic_inf']; ?>€ – <?php echo $e['ic_sup']; ?>€
+                                            <span style="font-size:0.78rem; color:#888;">(±<?php echo $e['margem']; ?>€)</span>
+                                        <?php else: ?>
+                                            <span style="color:#aaa;">N/A (n=1)</span>
+                                        <?php endif; ?>
+                                    </td>
                                     <td><?php echo $e['mediana']; ?>€</td>
                                     <td><?php echo $e['moda']; ?></td>
                                 </tr>
