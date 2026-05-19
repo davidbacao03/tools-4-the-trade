@@ -140,6 +140,72 @@
     $stmtFerramentas->execute($toolParams);
     $listaFerramentas = $stmtFerramentas->fetchAll(PDO::FETCH_ASSOC);
 
+    // Pearson correlation — price vs number of rentals
+    $pearsonRows = $bd->query(
+        "SELECT f.fer_preco AS preco,
+                COUNT(a.alu_id) AS total_alugueres
+         FROM ferramenta f
+         LEFT JOIN aluguer a ON a.alu_fer_id = f.fer_id AND a.alu_estado = 'Devolvido'
+         WHERE f.fer_ativa = 1
+         GROUP BY f.fer_id, f.fer_preco"
+    )->fetchAll(PDO::FETCH_ASSOC);
+
+    $pearsonR    = null;
+    $pearsonDesc = '';
+    $scatterData = [];
+
+    if (count($pearsonRows) >= 2) {
+        $xs = array_column($pearsonRows, 'preco');
+        $ys = array_column($pearsonRows, 'total_alugueres');
+        $n  = count($xs);
+        $mx = array_sum($xs) / $n;
+        $my = array_sum($ys) / $n;
+        $num = 0; $dx2 = 0; $dy2 = 0;
+        foreach ($xs as $i => $x) {
+            $dx   = $x - $mx;
+            $dy   = $ys[$i] - $my;
+            $num += $dx * $dy;
+            $dx2 += $dx * $dx;
+            $dy2 += $dy * $dy;
+        }
+        $denom   = sqrt($dx2 * $dy2);
+        $pearsonR = $denom > 0 ? round($num / $denom, 4) : 0;
+        $abs      = abs($pearsonR);
+        $dir      = $pearsonR >= 0 ? 'positiva' : 'negativa';
+        if ($abs >= 0.7)      $force = 'forte';
+        elseif ($abs >= 0.3)  $force = 'moderada';
+        else                  $force = 'fraca ou inexistente';
+        $pearsonDesc = "Correlação {$dir} {$force} (r = {$pearsonR}). " .
+            ($pearsonR >= 0
+                ? "Ferramentas mais caras tendem a ser mais alugadas."
+                : "Ferramentas mais caras tendem a ser menos alugadas.");
+        foreach ($pearsonRows as $row) {
+            $scatterData[] = ['x' => (float)$row['preco'], 'y' => (int)$row['total_alugueres']];
+        }
+        // Trend line: y = slope * x + intercept
+        $slope     = $dx2 > 0 ? round($num / $dx2, 4) : 0;
+        $intercept = round($my - $slope * $mx, 4);
+        $xMin      = min($xs);
+        $xMax      = max($xs);
+        $trendLine = [
+            ['x' => $xMin, 'y' => round($slope * $xMin + $intercept, 2)],
+            ['x' => $xMax, 'y' => round($slope * $xMax + $intercept, 2)],
+        ];
+    }
+
+    // Category vs rentals — average rentals per tool per category
+    $catAlugueres = $bd->query(
+        "SELECT c.cat_nome,
+                COUNT(DISTINCT f.fer_id) AS num_ferramentas,
+                COUNT(a.alu_id) AS total_alugueres,
+                ROUND(COUNT(a.alu_id) / NULLIF(COUNT(DISTINCT f.fer_id), 0), 2) AS media_por_ferramenta
+         FROM categoria c
+         LEFT JOIN ferramenta f ON f.fer_cat_id = c.cat_id AND f.fer_ativa = 1
+         LEFT JOIN aluguer a ON a.alu_fer_id = f.fer_id AND a.alu_estado = 'Devolvido'
+         GROUP BY c.cat_id, c.cat_nome
+         ORDER BY media_por_ferramenta DESC"
+    )->fetchAll(PDO::FETCH_ASSOC);
+
     // Descriptive stats — mean, median and mode of tool prices per category
     $precosCat = $bd->query("
         SELECT c.cat_nome, f.fer_preco
@@ -447,8 +513,7 @@
                     <?php if(empty($boxplotData)): ?>
                         <p class="empty-msg">Sem dados suficientes.</p>
                     <?php else: ?>
-                        <div style="display:flex; align-items:center; gap:16px; margin-bottom:16px; flex-wrap:wrap;">
-                            <button id="btnToggleOutliers" class="simple-button" style="font-size:0.82rem; padding:5px 12px;">Esconder outliers</button>
+                        <div style="margin-bottom:16px;">
                             <span id="outliersInfo" style="font-size:0.85rem; color:#888;"></span>
                         </div>
                         <div style="max-width:800px;">
@@ -460,8 +525,6 @@
                             var dados  = window.boxplotData;
                             var labels = dados.map(function(d) { return d.cat; });
                             var ctx    = document.getElementById('chartBoxplot');
-                            var mostrarOutliers = true;
-
                             var dsWhisker = {
                                 label: 'Bigode',
                                 data: dados.map(function(d) { return { x: d.cat, y: [d.min, d.max] }; }),
@@ -541,25 +604,163 @@
                                 }
                             });
 
-                            // Update outliers info
-                            function renderOutliersTable() {
+                            // Outliers info
+                            (function() {
                                 var total = outlierPoints.length;
                                 var info = document.getElementById('outliersInfo');
-                                info.textContent = total === 0 ? 'Nenhum outlier encontrado.' : total + ' outlier' + (total > 1 ? 's' : '') + ' encontrado' + (total > 1 ? 's' : '') + '.';
-                            }
-
-                            // Toggle button
-                            document.getElementById('btnToggleOutliers').addEventListener('click', function() {
-                                mostrarOutliers = !mostrarOutliers;
-                                this.textContent = mostrarOutliers ? 'Esconder outliers' : 'Mostrar outliers';
-                                chart.data.datasets[3].data = mostrarOutliers ? outlierPoints : [];
-                                chart.update();
-                            });
-
-                            renderOutliersTable();
+                                if (info) info.textContent = total === 0 ? 'Nenhum outlier encontrado.' : total + ' outlier' + (total > 1 ? 's' : '') + ' encontrado' + (total > 1 ? 's' : '') + '.';
+                            })();
                         })();
                         </script>
                     <?php endif; ?>
+                </section>
+
+                <?php if($pearsonR !== null): ?>
+                <section class="dashboard-section">
+                    <h2 class="section-title">Correlação - Preço vs Alugueres</h2>
+                    <p style="font-size:0.88rem; color:#888; margin-bottom:16px;">Relação entre o preço diário de cada ferramenta e o número de alugueres concluídos. A linha de tendência representa a regressão linear.</p>
+                    <div style="margin-bottom:16px; padding:12px 16px; background:#f9f9f9; border-left:3px solid #6c63ff; border-radius:4px; font-size:0.92rem;">
+                        <?php echo htmlspecialchars($pearsonDesc); ?>
+                    </div>
+                    <div style="max-width:700px;">
+                        <canvas id="chartPearson"></canvas>
+                    </div>
+                    <script>
+                    window.scatterData = <?php echo json_encode($scatterData); ?>;
+                    window.trendLine   = <?php echo json_encode($trendLine); ?>;
+                    (function() {
+                        var ctx = document.getElementById('chartPearson');
+                        new Chart(ctx, {
+                            type: 'scatter',
+                            data: {
+                                datasets: [
+                                    {
+                                        label: 'Ferramentas',
+                                        data: window.scatterData,
+                                        backgroundColor: 'rgba(108,99,255,0.6)',
+                                        borderColor: '#6c63ff',
+                                        pointRadius: 6,
+                                        type: 'scatter'
+                                    },
+                                    {
+                                        label: 'Tendência',
+                                        data: window.trendLine,
+                                        backgroundColor: 'rgba(231,76,60,0)',
+                                        borderColor: '#e74c3c',
+                                        borderWidth: 2,
+                                        pointRadius: 0,
+                                        type: 'line',
+                                        showLine: true
+                                    }
+                                ]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: { display: true, position: 'bottom' },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(c) {
+                                                if (c.dataset.label === 'Ferramentas') {
+                                                    return c.raw.x + '€/dia — ' + c.raw.y + ' aluguer' + (c.raw.y !== 1 ? 'es' : '');
+                                                }
+                                                return null;
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        title: { display: true, text: 'Preço (€/dia)' },
+                                        ticks: { callback: function(v) { return v + '€'; } }
+                                    },
+                                    y: {
+                                        beginAtZero: true,
+                                        title: { display: true, text: 'Nº de alugueres' },
+                                        ticks: { stepSize: 1 }
+                                    }
+                                }
+                            }
+                        });
+                    })();
+                    </script>
+                </section>
+                <?php endif; ?>
+
+                <section class="dashboard-section">
+                    <h2 class="section-title">Categoria vs Alugueres</h2>
+                    <p style="font-size:0.88rem; color:#888; margin-bottom:16px;">Número médio de alugueres por ferramenta em cada categoria, ordenado da mais procurada para a menos procurada.</p>
+                    <div style="display:flex; gap:32px; flex-wrap:wrap; align-items:flex-start;">
+                        <div style="flex:1; min-width:280px;">
+                            <table class="dash-table">
+                                <thead>
+                                    <tr>
+                                        <th>Categoria</th>
+                                        <th>Ferramentas</th>
+                                        <th>Total alugueres</th>
+                                        <th>Média por ferramenta</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach($catAlugueres as $ca): ?>
+                                    <tr>
+                                        <td><strong><?php echo htmlspecialchars($ca['cat_nome']); ?></strong></td>
+                                        <td><?php echo $ca['num_ferramentas']; ?></td>
+                                        <td><?php echo $ca['total_alugueres']; ?></td>
+                                        <td><?php echo $ca['media_por_ferramenta']; ?>×</td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="flex:1; min-width:300px; max-width:500px;">
+                            <canvas id="chartCatAlugueres"></canvas>
+                        </div>
+                    </div>
+                    <script>
+                    window.catAlugData = <?php echo json_encode(array_values($catAlugueres)); ?>;
+                    (function() {
+                        var ctx    = document.getElementById('chartCatAlugueres');
+                        var labels = window.catAlugData.map(function(d) { return d.cat_nome; });
+                        var values = window.catAlugData.map(function(d) { return parseFloat(d.media_por_ferramenta); });
+                        new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: labels,
+                                datasets: [{
+                                    label: 'Média de alugueres',
+                                    data: values,
+                                    backgroundColor: labels.map(function(_, i) {
+                                        var cols = ['#43b89c','#6c63ff','#f39c12','#e74c3c','#3498db','#9b59b6','#1abc9c','#e67e22'];
+                                        return cols[i % cols.length];
+                                    }),
+                                    borderRadius: 4
+                                }]
+                            },
+                            options: {
+                                indexAxis: 'y',
+                                responsive: true,
+                                plugins: {
+                                    legend: { display: false },
+                                    tooltip: {
+                                        callbacks: {
+                                            label: function(c) {
+                                                return c.raw + ' alugueres/ferramenta';
+                                            }
+                                        }
+                                    }
+                                },
+                                scales: {
+                                    x: {
+                                        beginAtZero: true,
+                                        title: { display: true, text: 'Média de alugueres' },
+                                        ticks: { stepSize: 0.5 }
+                                    }
+                                }
+                            }
+                        });
+                    })();
+                    </script>
                 </section>
 
                 <section class="dashboard-section">
