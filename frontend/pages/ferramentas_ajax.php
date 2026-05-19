@@ -9,8 +9,8 @@ $favStmt = $bd->prepare("SELECT fav_fer_id FROM favorito WHERE fav_utl_id = ?");
 $favStmt->execute([$_SESSION['utl_id']]);
 $favIds = array_flip($favStmt->fetchAll(PDO::FETCH_COLUMN));
 
-$where   = ["f.fer_ativa = 1"];
-$params  = [];
+$where   = ["f.fer_ativa = 1", "f.fer_utl_id != ?"];
+$params  = [(int)$_SESSION['utl_id']];
 
 if (isset($_GET['cat']) && $_GET['cat'] === 'favoritos') {
     $where[]  = "f.fer_id IN (SELECT fav_fer_id FROM favorito WHERE fav_utl_id = ?)";

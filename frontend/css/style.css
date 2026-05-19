@@ -311,6 +311,10 @@ body {
     background-color: #000000;
 }
 
+.tool-card:hover button {
+    background-color: #1B5E20;
+}
+
 .page-action {
     margin-bottom: 20px;
 }

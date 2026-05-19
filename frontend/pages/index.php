@@ -26,7 +26,7 @@
 	      FROM ferramenta f
 	      JOIN categoria c ON f.fer_cat_id = c.cat_id
 	      JOIN utilizador u ON f.fer_utl_id = u.utl_id
-	      WHERE f.fer_ativa = 1
+	      WHERE f.fer_ativa = 1 AND f.fer_utl_id != {$_SESSION['utl_id']}
 	      ORDER BY total_alugueres DESC
 	      LIMIT 10";
 	$ferramentas = $bd->query($q)->fetchAll(PDO::FETCH_ASSOC);
@@ -51,8 +51,8 @@
 	$cats = $bd->query("SELECT * FROM categoria ORDER BY cat_nome")->fetchAll(PDO::FETCH_ASSOC);
 
 	// All tools with filters
-	$where  = ["f.fer_ativa = 1"];
-	$params = [];
+	$where  = ["f.fer_ativa = 1", "f.fer_utl_id != ?"];
+	$params = [(int)$_SESSION['utl_id']];
 	$showFavoritos = isset($_GET['cat']) && $_GET['cat'] === 'favoritos';
 	if($showFavoritos) {
 		$where[]  = "f.fer_id IN (SELECT fav_fer_id FROM favorito WHERE fav_utl_id = ?)";
