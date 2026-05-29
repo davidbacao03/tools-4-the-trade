@@ -103,7 +103,7 @@
     <div class="layout">
 
         <aside class="sidebar">
-            <h2 class="logo">Tools 4 The Trade</h2>
+            <a href="index.php" class="logo"><img src="uploads/logo.png" alt="Logo"><span>Tools 4 The Trade</span></a>
             <nav class="menu">
                 <a href="index.php">Home</a>
                 <a href="ferramentas.php">Ferramentas</a>
