@@ -109,6 +109,7 @@
             <main class="main-area">
                 <section class="tools-section">
                     <h1>As Minhas Ferramentas</h1>
+                    <p style="color:#828282;font-size:0.9rem;margin:0 0 16px;">Ferramentas que adicionaste para alugar. O estado muda automaticamente quando outro utilizador faz uma reserva.</p>
 
                     <div class="page-action">
                         <a href="adicionarferramentas.php" class="simple-button">+ Adicionar Ferramenta</a>

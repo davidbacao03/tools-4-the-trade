@@ -62,10 +62,13 @@
         $inicio = $_POST['inicio'] ?? '';
         $fim    = $_POST['fim']    ?? '';
 
+        $maxDias = 365;
         if(!$inicio || !$fim) {
             $erro = 'Por favor preenche as datas de início e fim.';
         } elseif($fim <= $inicio) {
             $erro = 'A data de fim tem de ser posterior à data de início.';
+        } elseif((strtotime($fim) - strtotime($inicio)) / 86400 > $maxDias) {
+            $erro = "A duração máxima de aluguer é de {$maxDias} dias.";
         } else {
             $overlap = $bd->prepare(
                 "SELECT COUNT(*) FROM aluguer
@@ -133,7 +136,10 @@
                     <?php else: ?>
 
                     <?php if($erro): ?>
-                        <div class="msg-erro"><?php echo htmlspecialchars($erro); ?></div>
+                        <div class="msg-erro" style="font-size:1rem;padding:14px 18px;display:flex;align-items:center;gap:10px;">
+                            <span style="font-size:1.3rem;">⚠</span>
+                            <?php echo htmlspecialchars($erro); ?>
+                        </div>
                     <?php endif; ?>
 
                     <?php if(!empty($imagens)): ?>

@@ -9,9 +9,23 @@
 	}
 	$userFoto = $_SESSION['utl_foto'];
 
+	$erroForm = '';
 	if(isset($_POST['nome'])) {
+		$precoBase = (float)$_POST['preco_base'];
 		$descontoDias  = !empty($_POST['desconto_dias'])  ? (int)$_POST['desconto_dias']    : null;
 		$precoDesconto = !empty($_POST['desconto_preco']) ? (float)$_POST['desconto_preco'] : null;
+
+		if(trim($_POST['nome']) === '') {
+			$erroForm = 'O nome da ferramenta é obrigatório.';
+		} elseif($precoBase <= 0 || $precoBase > 9999) {
+			$erroForm = 'O preço deve estar entre 0.01€ e 9999€/dia.';
+		} elseif($descontoDias !== null && ($descontoDias < 2 || $descontoDias > 365)) {
+			$erroForm = 'O número de dias de desconto deve estar entre 2 e 365.';
+		} elseif($precoDesconto !== null && ($precoDesconto <= 0 || $precoDesconto >= $precoBase)) {
+			$erroForm = 'O preço com desconto deve ser maior que 0 e inferior ao preço normal.';
+		}
+
+		if(!$erroForm) {
 		$q = "INSERT INTO ferramenta (fer_utl_id, fer_cat_id, fer_nome, fer_descricao, fer_preco_base, fer_preco, fer_desconto_dias, fer_preco_desconto, fer_lat, fer_lng) VALUES (?,?,?,?,?,?,?,?,?,?)";
 		$stat = $bd->prepare($q);
 		$stat->execute([
@@ -47,6 +61,7 @@
 
 		header('Location: Ferramentas.php');
 		exit;
+		} // end if(!$erroForm)
 	}
 
 	$q = "SELECT * FROM categoria";
@@ -89,6 +104,10 @@
                 <section class="form-section">
                     <h1>Adicionar Ferramenta</h1>
 
+                    <?php if(!empty($erroForm)): ?>
+                        <div class="msg-erro"><?php echo htmlspecialchars($erroForm); ?></div>
+                    <?php endif; ?>
+
                     <form class="tool-form" action="" method="post" enctype="multipart/form-data" data-redirect="Ferramentas.php">
                         <label for="nome">Nome da ferramenta</label>
                         <input type="text" id="nome" name="nome">
@@ -104,14 +123,14 @@
                         <textarea id="descricao" name="descricao"></textarea>
 
                         <label for="preco_base">Preço (€/dia)</label>
-                        <input type="number" id="preco_base" name="preco_base" step="0.01">
+                        <input type="number" id="preco_base" name="preco_base" step="0.01" min="0.01" max="9999" required>
 
-                        <label>Desconto por aluguer prolongado <span class="label-opt">(opcional)</span></label>
+                        <label>Desconto por aluguer prolongado <span class="label-opt">(opcional — deixa em branco para ignorar)</span></label>
                         <div class="discount-row">
                             <span>A partir de</span>
-                            <input type="number" id="desconto_dias" name="desconto_dias" min="2" placeholder="Nº dias">
+                            <input type="number" id="desconto_dias" name="desconto_dias" min="2" max="365" placeholder="Nº dias">
                             <span>dias, preço de</span>
-                            <input type="number" id="desconto_preco" name="desconto_preco" step="0.01" min="0" placeholder="€/dia">
+                            <input type="number" id="desconto_preco" name="desconto_preco" step="0.01" min="0.01" max="9998" placeholder="€/dia">
                             <span>€/dia</span>
                         </div>
 

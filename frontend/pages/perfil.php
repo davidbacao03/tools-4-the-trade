@@ -11,18 +11,15 @@
         $own = $bd->prepare("SELECT fer_id FROM ferramenta WHERE fer_id = ? AND fer_utl_id = ?");
         $own->execute([$ferId, $uid]);
         if($own->fetchColumn()) {
-            // Get image paths before deleting
             $imgPaths = $bd->prepare("SELECT img_path FROM ferramenta_imagem WHERE img_fer_id = ?");
             $imgPaths->execute([$ferId]);
             foreach($imgPaths->fetchAll(PDO::FETCH_COLUMN) as $p) { @unlink(__DIR__ . '/' . $p); }
-            // Delete rentals then tool (cascade removes images from DB)
             $bd->prepare("DELETE FROM aluguer WHERE alu_fer_id = ?")->execute([$ferId]);
             $bd->prepare("DELETE FROM ferramenta WHERE fer_id = ? AND fer_utl_id = ?")->execute([$ferId, $uid]);
         }
         header('Location: perfil.php'); exit;
     }
 
-    // Rental status update handler
     if($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['alu_id'], $_POST['estado'])) {
         $estados = ['Reservado', 'Alugado', 'Devolvido'];
         if(in_array($_POST['estado'], $estados)) {

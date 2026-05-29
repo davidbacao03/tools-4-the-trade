@@ -1,4 +1,4 @@
-// Mark active nav link based on current page filename
+
 (function () {
     var page = window.location.pathname.split('/').pop().toLowerCase() || 'index.php';
     document.querySelectorAll('.menu a').forEach(function (a) {
@@ -7,7 +7,7 @@
     });
 })();
 
-// Search — live filter of .tool-card elements
+
 var searchInput = document.querySelector('.search-box input');
 if (searchInput) {
     var searchEmptyMsg = null;

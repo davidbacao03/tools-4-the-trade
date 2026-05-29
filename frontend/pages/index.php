@@ -9,12 +9,10 @@
 	}
 	$userFoto = $_SESSION['utl_foto'];
 
-	// User favourites (keyed by fer_id for O(1) lookup)
 	$favStmt = $bd->prepare("SELECT fav_fer_id FROM favorito WHERE fav_utl_id = ?");
 	$favStmt->execute([$_SESSION['utl_id']]);
 	$favIds = array_flip($favStmt->fetchAll(PDO::FETCH_COLUMN));
 
-	// Top 10 most rented
 	$q = "SELECT f.fer_id, f.fer_utl_id, f.fer_nome, f.fer_descricao, f.fer_preco, f.fer_preco_base,
 	             f.fer_lat, f.fer_lng, f.fer_desconto_dias, f.fer_preco_desconto, c.cat_nome,
 	             u.utl_nome AS dono_nome, u.utl_foto AS dono_foto,
@@ -31,7 +29,6 @@
 	      LIMIT 10";
 	$ferramentas = $bd->query($q)->fetchAll(PDO::FETCH_ASSOC);
 
-	// Fetch all images for top 10
 	$imagesByTool = [];
 	if (!empty($ferramentas)) {
 		$ids = array_column($ferramentas, 'fer_id');
@@ -47,10 +44,8 @@
 		}
 	}
 
-	// Categories for filter bar
 	$cats = $bd->query("SELECT * FROM categoria ORDER BY cat_nome")->fetchAll(PDO::FETCH_ASSOC);
 
-	// All tools with filters
 	$where  = ["f.fer_ativa = 1", "f.fer_utl_id != ?"];
 	$params = [(int)$_SESSION['utl_id']];
 	$showFavoritos = isset($_GET['cat']) && $_GET['cat'] === 'favoritos';

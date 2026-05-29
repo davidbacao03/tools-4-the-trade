@@ -38,7 +38,8 @@
 </head>
 <body class="auth-layout">
 <div>
-<h2>Registar</h2>
+<h2>Criar conta</h2>
+<p style="color:#828282;margin:0 0 16px;font-size:0.9rem;">Junta-te à plataforma de aluguer de ferramentas.</p>
 <?php if($erro): ?><p class="erro"><?php echo htmlspecialchars($erro); ?></p><?php endif; ?>
 <form action="" method="post" novalidate>
 <input type="text" name="nome" placeholder="Nome" value="<?php echo htmlspecialchars($_POST['nome'] ?? ''); ?>" required>
@@ -46,7 +47,10 @@
 <input type="password" name="passe" placeholder="Password (mín. 6 caracteres)" required>
 <button>Registar</button>
 </form>
-<a href="login.php">Já tens conta? Entra aqui</a>
+<div style="text-align:center;margin-top:16px;padding-top:16px;border-top:1px solid #E0E0E0;">
+    <span style="font-size:0.88rem;color:#828282;">Já tens conta?</span><br>
+    <a href="login.php" style="font-weight:600;color:#1B5E20;text-decoration:none;">Entrar →</a>
+</div>
 </div>
 </body>
 </html>

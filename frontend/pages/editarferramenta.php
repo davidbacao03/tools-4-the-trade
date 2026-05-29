@@ -155,15 +155,15 @@
                         <textarea id="descricao" name="descricao"><?php echo htmlspecialchars($f['fer_descricao'] ?? ''); ?></textarea>
 
                         <label for="preco_base">Preço (€/dia)</label>
-                        <input type="number" id="preco_base" name="preco_base" step="0.01" value="<?php echo $f['fer_preco_base']; ?>">
+                        <input type="number" id="preco_base" name="preco_base" step="0.01" min="0.01" max="9999" required value="<?php echo $f['fer_preco_base']; ?>">
 
-                        <label>Desconto por aluguer prolongado <span class="label-opt">(opcional)</span></label>
+                        <label>Desconto por aluguer prolongado <span class="label-opt">(opcional — deixa em branco para ignorar)</span></label>
                         <div class="discount-row">
                             <span>A partir de</span>
-                            <input type="number" id="desconto_dias" name="desconto_dias" min="2" placeholder="Nº dias"
+                            <input type="number" id="desconto_dias" name="desconto_dias" min="2" max="365" placeholder="Nº dias"
                                    value="<?php echo $f['fer_desconto_dias'] ?? ''; ?>">
                             <span>dias, preço de</span>
-                            <input type="number" id="desconto_preco" name="desconto_preco" step="0.01" min="0" placeholder="€/dia"
+                            <input type="number" id="desconto_preco" name="desconto_preco" step="0.01" min="0.01" max="9998" placeholder="€/dia"
                                    value="<?php echo $f['fer_preco_desconto'] ?? ''; ?>">
                             <span>€/dia</span>
                         </div>

@@ -83,7 +83,6 @@
     if(isset($_GET['ok']))   $sucesso = 'Operação realizada com sucesso.';
     if(isset($_GET['erro'])) $erro    = 'Não podes modificar a tua própria conta.';
 
-    // Platform-wide stats
     $stats = $bd->query("
         SELECT
             (SELECT COUNT(*) FROM utilizador)                           AS total_utl,
